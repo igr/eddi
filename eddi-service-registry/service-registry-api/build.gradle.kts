@@ -1,0 +1,8 @@
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+}
+dependencies {
+    implementation(project(":eddi-api"))
+    implementation(project(":eddi-cmd-bus:cmd-bus-api"))
+    implementation(project(":eddi-event-store:event-store-api"))
+}
