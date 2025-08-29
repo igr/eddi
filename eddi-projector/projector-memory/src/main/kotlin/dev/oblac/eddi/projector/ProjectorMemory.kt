@@ -33,17 +33,11 @@ class ProjectorMemory : Projector {
         eventHandlers[eventType] = handler as (EventEnvelope<Event>) -> Unit
     }
 
-    /**
-     * Processes an incoming event by calling the appropriate registered handler.
-     * This method would typically be called by an event bus or similar mechanism.
-     */
-    internal fun handleEvent(eventEnvelope: EventEnvelope<Event>) {
-        val eventType = eventEnvelope.event::class
-        eventHandlers[eventType]?.invoke(eventEnvelope)
-    }
-
     override fun start(eventBus: EventBus) {
-        eventBus.registerEventHandler(::handleEvent)
+        eventBus.registerEventHandler {
+            val eventType = it.event::class
+            eventHandlers[eventType]?.invoke(it)
+        }
     }
 
 }

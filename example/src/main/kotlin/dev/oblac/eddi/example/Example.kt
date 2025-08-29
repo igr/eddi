@@ -36,6 +36,7 @@ fun main() {
 
     // USE #1
 
+    // todo this function is part of the EDDI framework
     fun <C : Command> supplyCommandX(command: C): CommandEnvelope<C> {
         return commandStore.storeCommand(command)
     }
@@ -44,6 +45,7 @@ fun main() {
 
     // USE #2 - with result handler
 
+    // todo this function is part of the EDDI framework
     fun <C : Command, R> runCommandY(command: C, resultHandler: (R) -> Unit) {
         val cmdEnv = commandStore.storeCommand(command)
         projector.registerEphemeralProjectionWaitForCommandResult(cmdEnv.id, resultHandler)
@@ -61,7 +63,7 @@ fun main() {
 }
 
 // service
-fun sum(command: SumCommand): Array<Event> {
+fun sum(command: SumCommand): Array<SumEvent> {
     println("Handling SumCommand: $command")
     return arrayOf(SumEvent(command.a + command.b))
 }
