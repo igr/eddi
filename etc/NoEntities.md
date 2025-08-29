@@ -11,4 +11,4 @@ flowchart BT
     Graded --> CoursePublished
 ```
 
-On Graded command, we need to summarise the state of the StudentRegistered to determine if the student is not quited.
+On `Grade` command, we need to summarise the state from the `StudentRegistered` to determine if the student is not quited.
