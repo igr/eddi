@@ -1,7 +1,8 @@
-package dev.oblac.eddi.example
+package dev.oblac.eddi.example.college
 
 import dev.oblac.eddi.Command
 import dev.oblac.eddi.Event
+import dev.oblac.eddi.example.createMemoryEddie
 import java.time.Instant
 
 // Root event - foundational event for student lifecycle
@@ -94,12 +95,16 @@ fun main() {
     val eddi = createMemoryEddie()
 
     // Register command handlers following the NoEntities pattern
-    eddi.serviceRegistry.registerService(RegisterStudent::class, ::registerStudent)
-    eddi.serviceRegistry.registerService(PayTuition::class, ::payTuition)
-    eddi.serviceRegistry.registerService(EnrollInCourse::class, ::enrollInCourse)
-    eddi.serviceRegistry.registerService(PublishCourse::class, ::publishCourse)
-    eddi.serviceRegistry.registerService(GradeStudent::class, ::gradeStudent)
-    eddi.serviceRegistry.registerService(DeregisterStudent::class, ::deregisterStudent)
+    with(eddi.serviceRegistry) {
+        registerService(RegisterStudent::class, ::registerStudent)
+        registerService(PayTuition::class, ::payTuition)
+        registerService(EnrollInCourse::class, ::enrollInCourse)
+        registerService(PublishCourse::class, ::publishCourse)
+        registerService(GradeStudent::class, ::gradeStudent)
+        registerService(DeregisterStudent::class, ::deregisterStudent)
+    }
+
+    projections(eddi)
 
     // Example usage
     val registerCmd = RegisterStudent("S001", "John", "Doe", "john.doe@college.edu")
@@ -108,10 +113,11 @@ fun main() {
     with(eddi.commandStore) {
         storeCommand(registerCmd)
         storeCommand(publishCmd)
-        
     }
-    
+
     println("College system initialized with sample commands")
+
+    readln()
 }
 
 // Command handlers - following NoEntities pattern where commands produce events
