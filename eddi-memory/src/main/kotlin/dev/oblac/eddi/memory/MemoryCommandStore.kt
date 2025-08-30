@@ -55,10 +55,6 @@ class MemoryCommandStore(
         }
     }
 
-    override fun publishCommand(commandEnvelope: CommandEnvelope<Command>) {
-        commandBus.publishCommand(commandEnvelope)
-    }
-
     override fun start() {
         println("Starting MemoryCommandStore...")
         
@@ -104,7 +100,7 @@ class MemoryCommandStore(
     /**
      * Gets the total number of commands stored and published.
      */
-    fun getMetrics(): CommandStoreMetrics {
+    fun metrics(): CommandStoreMetrics {
         val storedCount = totalCommandsStored.get()
         val publishedCount = if (::outbox.isInitialized) outbox.getTotalCommandsPublished() else 0L
         val pendingCount = if (::outbox.isInitialized) outbox.getPendingCommandsCount() else 0L
