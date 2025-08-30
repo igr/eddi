@@ -102,7 +102,7 @@ class MemoryEventStore(
     /**
      * Gets the total number of events stored and published.
      */
-    suspend fun getMetrics(): EventStoreMetrics {
+    fun getMetrics(): EventStoreMetrics {
         val storedCount = totalEventsStored.get()
         val publishedCount = if (::outbox.isInitialized) outbox.getTotalEventsPublished() else 0L
         val pendingCount = if (::outbox.isInitialized) outbox.getPendingEventsCount() else 0L

@@ -13,6 +13,5 @@ fun createMemoryEddie(): Eddi {
     val serviceRegistry: ServiceRegistry = MemoryServiceRegistry().also { it.start(commandBus, evetStore) }
     val projector: Projector = MemoryProjector(eventBus)
 
-    val eddi = Eddi(commandBus, commandStore, eventBus, evetStore, serviceRegistry, projector)
-    return eddi
+    return Eddi(commandBus, commandStore, eventBus, evetStore, serviceRegistry, projector)
 }
