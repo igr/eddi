@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
+ * todo extract interface for outbox and have a no-op impl for cases where outbox is not needed
  * Outbox implementation for MemoryEventStore that handles asynchronous event publishing.
  * 
  * This class implements the outbox pattern by:

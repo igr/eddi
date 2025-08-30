@@ -107,12 +107,12 @@ fun main() {
     projections(eddi)
 
     // Example usage
-    val registerCmd = RegisterStudent("S001", "John", "Doe", "john.doe@college.edu")
-    val publishCmd = PublishCourse("CS101", "Introduction to Computer Science", "Dr. Smith", 3)
 
     with(eddi.commandStore) {
-        storeCommand(registerCmd)
-        storeCommand(publishCmd)
+        storeCommand(RegisterStudent("S001", "John", "Doe", "john.doe@college.edu"))
+        storeCommand(PublishCourse("CS101", "Introduction to Computer Science", "Dr. Smith", 3))
+        storeCommand(PayTuition("S001", 1500.0, "Fall 2024"))
+        storeCommand(EnrollInCourse("S001", "CS101"))   // Enroll after registration and course publication!
     }
 
     println("College system initialized with sample commands")
