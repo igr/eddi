@@ -4,48 +4,139 @@ import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventBus
 import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventStore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicLong
 
+/**
+ * Memory-based event store implementation.
+ * 
+ * This implementation:
+ * - Stores events persistently in memory using thread-safe collections
+ * - Delegates outbox pattern functionality to EventStoreOutbox
+ * - Maintains event ordering and provides retrieval capabilities
+ * - Memory efficient: events stored only once, no separate outbox queue
+ */
 class MemoryEventStore(
-    private val eventBus: EventBus
+    private val eventBus: EventBus,
+    private val processingDelayMs: Long = 100L // Configurable delay for outbox processing
 ) : EventStore {
-    private val eventChannel = Channel<EventEnvelope<Event>>(Channel.UNLIMITED)
-    private val eventFlow: Flow<EventEnvelope<Event>> = eventChannel.receiveAsFlow()
-    private val scope = CoroutineScope(Dispatchers.Default)
+    
+    // Persistent storage for all events (ordered by insertion)
+    private val storedEvents = mutableListOf<EventEnvelope<Event>>()
+    private val storageMutex = Mutex()
+    
+    // Outbox for handling asynchronous event publishing
+    private lateinit var outbox: EventStoreOutbox
+    
+    // Metrics and tracking
+    private val totalEventsStored = AtomicLong(0)
 
     override fun storeEvents(correlationId: Long, events: Array<Event>): Array<EventEnvelope<Event>> {
-        return events.map { event ->
-            EventEnvelope(
-                id = correlationId,
-                event = event,
-                timestamp = Instant.now(),
-            ).also { envelope ->
-                val result = eventChannel.trySend(envelope)
-                if (result.isFailure) {
-                    println("Failed to store event: ${result.exceptionOrNull()}")
-                }
-                println("Storing event: $envelope")
+        return runBlocking {
+            val envelopes = events.map { event ->
+                EventEnvelope(
+                    id = correlationId,
+                    event = event,
+                    timestamp = Instant.now()
+                )
             }
-        }.toTypedArray()
-    }
-
-    override fun publishEvent(eventEnvelope: EventEnvelope<Event>) {
-        eventBus.publishEvent(eventEnvelope)
-    }
-
-    override fun start() {
-        scope.launch {
-            eventFlow.collect { eventEnvelope ->
-                println("Processing event: $eventEnvelope")
-                publishEvent(eventEnvelope)
+            
+            // Store events persistently (outbox pattern - store first)
+            storageMutex.withLock {
+                storedEvents.addAll(envelopes)
+                totalEventsStored.addAndGet(envelopes.size.toLong())
             }
+            
+            // Events are now available for outbox processing via index comparison
+            println("Events stored for processing: ${envelopes.size} events")
+            
+            envelopes.toTypedArray()
         }
     }
 
+    override fun start() {
+        println("Starting MemoryEventStore...")
+        
+        // Initialize and start the outbox
+        outbox = EventStoreOutbox(eventBus, this, processingDelayMs)
+        outbox.start()
+        
+        println("MemoryEventStore started with outbox processing")
+    }
+    
+    /**
+     * Stops the event processing.
+     */
+    fun stop() {
+        println("Stopping MemoryEventStore...")
+        if (::outbox.isInitialized) {
+            outbox.stop()
+        }
+    }
+    
+    /**
+     * Retrieves all stored events, optionally filtered by correlation ID.
+     */
+    suspend fun getStoredEvents(correlationId: Long? = null): List<EventEnvelope<Event>> {
+        return storageMutex.withLock {
+            if (correlationId != null) {
+                storedEvents.filter { it.id == correlationId }
+            } else {
+                storedEvents.toList() // Return a copy to avoid concurrent modification
+            }
+        }
+    }
+    
+    /**
+     * Retrieves events stored after a specific timestamp.
+     */
+    suspend fun getEventsAfter(timestamp: Instant): List<EventEnvelope<Event>> {
+        return storageMutex.withLock {
+            storedEvents.filter { it.timestamp.isAfter(timestamp) }
+        }
+    }
+    
+    /**
+     * Gets the total number of events stored and published.
+     */
+    suspend fun getMetrics(): EventStoreMetrics {
+        val storedCount = totalEventsStored.get()
+        val publishedCount = if (::outbox.isInitialized) outbox.getTotalEventsPublished() else 0L
+        val pendingCount = if (::outbox.isInitialized) outbox.getPendingEventsCount() else 0L
+        return EventStoreMetrics(
+            totalStored = storedCount,
+            totalPublished = publishedCount,
+            pendingInOutbox = pendingCount
+        )
+    }
+    
+    /**
+     * Internal method for outbox to access storage mutex.
+     * Package-private for use by EventStoreOutbox only.
+     */
+    internal fun getStorageMutex(): Mutex = storageMutex
+    
+    /**
+     * Internal method for outbox to access stored events.
+     * Package-private for use by EventStoreOutbox only.
+     */
+    internal fun getStoredEventsInternal(): List<EventEnvelope<Event>> = storedEvents
+    
+    /**
+     * Internal method for outbox to get total events stored count.
+     * Package-private for use by EventStoreOutbox only.
+     */
+    internal fun getTotalEventsStored(): Long = totalEventsStored.get()
 }
+
+/**
+ * Metrics data class for monitoring event store performance.
+ */
+data class EventStoreMetrics(
+    val totalStored: Long,
+    val totalPublished: Long,
+    val pendingInOutbox: Long
+)

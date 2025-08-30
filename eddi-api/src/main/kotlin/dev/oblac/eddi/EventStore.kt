@@ -15,11 +15,4 @@ interface EventStore {
      */
     fun storeEvents(correlationId: Long, events: Array<Event>): Array<EventEnvelope<Event>>
 
-    /**
-     * OUT API
-     * Publishes the given [EventEnvelope] to the outside world.
-     * This function is typically called by the event store's internal processing mechanism.
-     */
-    fun publishEvent(ceventEnvelope: EventEnvelope<Event>)
-
 }
