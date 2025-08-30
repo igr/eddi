@@ -3,6 +3,7 @@ package dev.oblac.eddi.example.college
 import dev.oblac.eddi.Command
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.example.createMemoryEddie
+import dev.oblac.eddi.registerService
 import java.time.Instant
 
 // Root event - foundational event for student lifecycle
@@ -96,12 +97,12 @@ fun main() {
 
     // Register command handlers following the NoEntities pattern
     with(eddi.serviceRegistry) {
-        registerService(RegisterStudent::class, ::registerStudent)
-        registerService(PayTuition::class, ::payTuition)
-        registerService(EnrollInCourse::class, ::enrollInCourse)
-        registerService(PublishCourse::class, ::publishCourse)
-        registerService(GradeStudent::class, ::gradeStudent)
-        registerService(DeregisterStudent::class, ::deregisterStudent)
+        registerService(::registerStudent)
+        registerService(::payTuition)
+        registerService(::enrollInCourse)
+        registerService(::publishCourse)
+        registerService(::gradeStudent)
+        registerService(::deregisterStudent)
     }
 
     projections(eddi)
