@@ -16,3 +16,15 @@ interface ServiceRegistry {
 
     fun start(commandBus: CommandBus, eventStore: EventStore)
 }
+
+inline fun <reified C : Command, E : Event> ServiceRegistry.registerService(
+    service: Service<C, E>
+) {
+    registerService(C::class, service)
+}
+
+inline fun <reified C : Command> ServiceRegistry.withService(
+    noinline block: (Service<C, Event>) -> Array<Event>
+): Array<Event> {
+    return withService(C::class, block)
+}
