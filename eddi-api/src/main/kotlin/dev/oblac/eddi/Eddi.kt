@@ -22,5 +22,5 @@ data class CommandEnvelope<T : Command>(
 data class EventEnvelope<E : Event>(
     val id: Long,   // todo add CorrelationId value type
     val event: E,
-    val timestamp: Instant,
+    val timestamp: Instant = Instant.now(), // todo remove where set in the code
 )

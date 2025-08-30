@@ -1,19 +1,19 @@
 package dev.oblac.eddi.projector
 
 import dev.oblac.eddi.Event
-import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.eventbus.EventBus
 import kotlin.reflect.KClass
 
-class ProjectorMemory : Projector {
+class ProjectorMemory(val eventBus: EventBus) : Projector {
     private val projections = mutableMapOf<Long, (Any) -> Unit>()
-    private val eventHandlers = mutableMapOf<KClass<out Event>, (EventEnvelope<Event>) -> Unit>()
+    //private val eventHandlers = mutableMapOf<KClass<out Event>, (EventEnvelope<Event>) -> Array<Event>>()
 
     override fun <E : Event, P> projectorForEvent(eventType: KClass<E>, handler: (E) -> P) {
-        registerEventHandler(eventType, { event ->
+        eventBus.registerEventHandler(eventType, { event ->
             val projection = handler(event.event as E)
             println("Event ${event.event} to projection $projection")
             triggerProjection(event.id, projection)
+            arrayOf()
         })
     }
 
@@ -28,16 +28,5 @@ class ProjectorMemory : Projector {
         }
     }
 
-    override fun <E : Event> registerEventHandler(eventType: KClass<E>, handler: (EventEnvelope<E>) -> Unit) {
-        @Suppress("UNCHECKED_CAST")
-        eventHandlers[eventType] = handler as (EventEnvelope<Event>) -> Unit
-    }
-
-    override fun start(eventBus: EventBus) {
-        eventBus.registerEventHandler {
-            val eventType = it.event::class
-            eventHandlers[eventType]?.invoke(it)
-        }
-    }
 
 }

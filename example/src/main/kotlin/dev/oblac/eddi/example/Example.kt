@@ -3,12 +3,14 @@ package dev.oblac.eddi.example
 import dev.oblac.eddi.Command
 import dev.oblac.eddi.CommandEnvelope
 import dev.oblac.eddi.Event
+import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.cmdbus.CommandBus
 import dev.oblac.eddi.cmdbus.CommandBusMemory
 import dev.oblac.eddi.cmdstore.CommandStore
 import dev.oblac.eddi.cmdstore.CommandStoreMemory
 import dev.oblac.eddi.eventbus.EventBus
 import dev.oblac.eddi.eventbus.EventBusMemory
+import dev.oblac.eddi.eventbus.registerEventHandler
 import dev.oblac.eddi.eventstore.EventStore
 import dev.oblac.eddi.eventstore.EventStoreMemory
 import dev.oblac.eddi.projector.Projector
@@ -17,6 +19,7 @@ import dev.oblac.eddi.serviceregistry.ServiceRegistry
 import dev.oblac.eddi.serviceregistry.ServiceRegistryMemory
 
 data class SumCommand(val a: Int, val b: Int) : Command
+data class PreSumEvent(val result: Int) : Event
 data class SumEvent(val result: Int) : Event
 data class SumResult(val result: Int)
 
@@ -29,10 +32,18 @@ fun main() {
     val eventBus: EventBus = EventBusMemory().also { it.start() }
     val evetStore: EventStore = EventStoreMemory(eventBus).also { it.start() }
     val serviceRegistry: ServiceRegistry = ServiceRegistryMemory().also { it.start(commandBus, evetStore) }
-    val projector: Projector = ProjectorMemory().also { it.start(eventBus) }
+    val projector: Projector = ProjectorMemory(eventBus)
 
     // register services
     serviceRegistry.registerService(SumCommand::class, ::sum)
+    eventBus.registerEventHandler { eventEnvelope: EventEnvelope<PreSumEvent> ->
+        println("Event handled in event bus handler: $eventEnvelope")
+        arrayOf(SumEvent(eventEnvelope.event.result + 100))
+    }
+    eventBus.registerEventHandler { eventEnvelope: EventEnvelope<SumEvent> ->
+        println("Event handled in event bus handler: $eventEnvelope")
+        arrayOf()
+    }
 
     // USE #1
 
@@ -63,7 +74,7 @@ fun main() {
 }
 
 // service
-fun sum(command: SumCommand): Array<SumEvent> {
+fun sum(command: SumCommand): Array<PreSumEvent> {
     println("Handling SumCommand: $command")
-    return arrayOf(SumEvent(command.a + command.b))
+    return arrayOf(PreSumEvent(command.a + command.b))
 }

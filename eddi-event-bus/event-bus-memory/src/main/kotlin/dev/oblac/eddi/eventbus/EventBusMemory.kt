@@ -7,11 +7,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import java.time.Instant
+import kotlin.reflect.KClass
+
+// todo extract eventHandler function signature
 
 class EventBusMemory : EventBus {
     private val eventChannel = Channel<EventEnvelope<Event>>(Channel.UNLIMITED)
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val handlers = mutableListOf<(EventEnvelope<Event>) -> Unit>()
+    private val handlers = mutableMapOf<KClass<out Event>, (EventEnvelope<Event>) -> Array<Event>>()
 
     override fun start() {
         scope.launch {
@@ -21,8 +25,8 @@ class EventBusMemory : EventBus {
         }
     }
 
-    override fun registerEventHandler(handler: (EventEnvelope<Event>) -> Unit) {
-        handlers.add(handler)
+    override fun <E : Event> registerEventHandler(eventClass: KClass<E>, handler: (EventEnvelope<E>) -> Array<Event>) {
+        handlers[eventClass] = handler as (EventEnvelope<Event>) -> Array<Event>
     }
 
     override fun publishEvent(event: EventEnvelope<Event>) {
@@ -32,8 +36,13 @@ class EventBusMemory : EventBus {
 
     override fun handleEvent(eventEnvelope: EventEnvelope<Event>) {
         println("Handling event: $eventEnvelope")
-        handlers.forEach { handler ->
-            handler(eventEnvelope)
+        val eventClass = eventEnvelope.event::class
+        val handler = handlers[eventClass]
+        if (handler != null) {
+            handler(eventEnvelope).forEach { resultEvent ->
+                val newEventEnvelope = EventEnvelope(eventEnvelope.id, resultEvent, Instant.now())
+                publishEvent(newEventEnvelope)
+            }
         }
     }
 }

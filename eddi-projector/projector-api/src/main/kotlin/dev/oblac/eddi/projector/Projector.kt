@@ -1,8 +1,6 @@
 package dev.oblac.eddi.projector
 
 import dev.oblac.eddi.Event
-import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.eventbus.EventBus
 import kotlin.reflect.KClass
 
 interface Projector {
@@ -27,11 +25,4 @@ interface Projector {
      */
     fun <R> registerEphemeralProjectionWaitForCommandResult(cmdId: Long, resultHandler: (result: R) -> Unit)
 
-    /**
-     * Registers an event handler for a specific event type.
-     * This is used internally by projectorForEvent but can also be used directly.
-     */
-    fun <E : Event> registerEventHandler(eventType: KClass<E>, handler: (EventEnvelope<E>) -> Unit)
-
-    fun start(eventBus: EventBus)
 }
