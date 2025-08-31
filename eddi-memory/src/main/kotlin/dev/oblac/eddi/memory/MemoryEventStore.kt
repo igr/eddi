@@ -1,14 +1,14 @@
 package dev.oblac.eddi.memory
 
-import dev.oblac.eddi.Event
-import dev.oblac.eddi.EventBus
-import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.EventStore
+import dev.oblac.eddi.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
+import kotlin.reflect.full.memberProperties
 
 /**
  * Memory-based event store implementation.
@@ -96,9 +96,37 @@ class MemoryEventStore(
         )
     }
 
-    override fun findLast(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
-    
     override fun totalEventsStored(): Long = totalEventsStored.get()
+
+    override fun findLast(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
+
+    override fun findLastTaggedEvent(klass: KClass<out Event>, tagklass: KClass<out Tag>, id: String): EventEnvelope<Event>? {
+        return storedEvents.lastOrNull {
+            val event = it.event
+            if (event::class != klass) {
+                return@lastOrNull false
+            }
+
+            val typedId: String? = if (tagklass.isInstance(event)) {
+                // use reflection to get the id field named "<tagKlass>Id"
+                val propertyName = tagklass.simpleName?.replaceFirstChar { it.lowercase() }
+                try {
+                    val eventClass = event::class
+                    val properties = eventClass.memberProperties
+                    val property = properties.find { it.name == propertyName }
+                    @Suppress("UNCHECKED_CAST")
+                    val stringProperty = property as? KProperty1<Any, String>
+                    stringProperty?.get(event)
+                } catch (e: Exception) {
+                    null
+                }
+            } else {
+                return@lastOrNull false
+            }
+
+            typedId == id
+        }
+    }
 }
 
 /**

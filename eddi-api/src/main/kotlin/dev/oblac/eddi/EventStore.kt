@@ -1,5 +1,7 @@
 package dev.oblac.eddi
 
+import kotlin.reflect.KClass
+
 interface EventStore : EventStoreRepo {
 
     /**
@@ -28,5 +30,11 @@ interface EventStoreRepo {
      * Returns events from a specific index.
      */
     fun findLast(fromIndex: Int): List<EventEnvelope<Event>>
+
+    /**
+     * Finds the last event of a specific class [klass] with the given identifier [id].
+     * Returns the event if found, or null if no such event exists.
+     */
+    fun findLastTaggedEvent(klass: KClass<out Event>, tagklass: KClass<out Tag>, id: String): EventEnvelope<Event>?
 
 }

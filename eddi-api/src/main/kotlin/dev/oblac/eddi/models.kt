@@ -12,12 +12,13 @@ interface Command
  */
 interface Event
 
+interface Tag
+
 data class CommandEnvelope<T : Command>(
     val id: Long,
     val command: T,
     val timestamp: Instant
 )
-
 
 data class EventEnvelope<E : Event>(
     val id: Long,   // todo add CorrelationId value type

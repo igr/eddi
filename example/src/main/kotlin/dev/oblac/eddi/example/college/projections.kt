@@ -47,7 +47,7 @@ data class TranscriptEntry(
 )
 
 
-fun projections(eddi: Eddi) {
+fun createProjections(eddi: Eddi) {
 
     // In-memory data stores for projections
     val studentProfiles = mutableMapOf<String, StudentProfile>()

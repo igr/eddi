@@ -4,4 +4,5 @@ plugins {
 dependencies {
     implementation(project(":eddi-api"))
     implementation(libs.kotlinx.coroutines)
+    implementation(kotlin("reflect"))
 }
