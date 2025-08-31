@@ -34,26 +34,24 @@ class MemoryEventStore(
     // Metrics and tracking
     private val totalEventsStored = AtomicLong(0)
 
-    override fun storeEvents(correlationId: Long, events: Array<Event>): Array<EventEnvelope<Event>> {
+    override fun storeEvent(correlationId: Long, event: Event): EventEnvelope<Event> {
         return runBlocking {
-            val envelopes = events.map { event ->
-                EventEnvelope(
-                    id = correlationId,
-                    event = event,
-                    timestamp = Instant.now()
-                )
-            }
+            val envelope = EventEnvelope(
+                id = correlationId,
+                event = event,
+                timestamp = Instant.now()
+            )
             
-            // Store events persistently (outbox pattern - store first)
+            // Store event persistently (outbox pattern - store first)
             storageMutex.withLock {
-                storedEvents.addAll(envelopes)
-                totalEventsStored.addAndGet(envelopes.size.toLong())
+                storedEvents.add(envelope)
+                totalEventsStored.incrementAndGet()
             }
             
-            // Events are now available for outbox processing via index comparison
-            println("Events stored for processing: ${envelopes.size} events")
+            // Event is now available for outbox processing via index comparison
+            println("Event stored for processing: ${event::class.simpleName}")
             
-            envelopes.toTypedArray()
+            envelope
         }
     }
 

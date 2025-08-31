@@ -10,9 +10,9 @@ interface EventStore {
 
     /**
      * IN API
-     * Stores the given events array and returns an array of [EventEnvelope] containing the events and their metadata.
-     * The events are stored internally for later processing.
+     * Stores the given event and returns an [EventEnvelope] containing the event and its metadata.
+     * The event is stored internally for later processing.
      */
-    fun storeEvents(correlationId: Long, events: Array<Event>): Array<EventEnvelope<Event>>
+    fun storeEvent(correlationId: Long, event: Event): EventEnvelope<Event>
 
 }

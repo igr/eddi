@@ -12,7 +12,11 @@ class MemoryServiceRegistry : ServiceRegistry {
             val command = commandEnvelope.command
             @Suppress("UNCHECKED_CAST")
             withService(command::class) { it(command) }
-                .also { eventStore.storeEvents(commandEnvelope.id, it) }
+                .also {
+                    it.forEach { event ->
+                        eventStore.storeEvent(commandEnvelope.id, event)
+                    }
+                }
         }
     }
 
