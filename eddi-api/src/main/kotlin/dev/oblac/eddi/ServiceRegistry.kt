@@ -27,9 +27,3 @@ inline fun <reified C : Command, E : Event> ServiceRegistry.registerService(
 ) {
     registerService(C::class, service)
 }
-
-inline fun <reified C : Command> ServiceRegistry.withService(
-    noinline block: (Service<C, Event>) -> Array<Event>
-): Array<Event> {
-    return withService(C::class, block)
-}
