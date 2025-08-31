@@ -121,7 +121,6 @@ fun main() {
     readln()
 }
 
-// Command handlers - following NoEntities pattern where commands produce events
 fun registerStudent(command: RegisterStudent): Array<StudentRegistered> {
     println("Registering student: ${command.firstName} ${command.lastName}")
     return arrayOf(
@@ -146,6 +145,9 @@ fun payTuition(command: PayTuition): Array<TuitionPaid> {
 }
 
 fun enrollInCourse(command: EnrollInCourse): Array<Enrolled> {
+    // 1) check if the student is registered
+    // 2) check the course is published
+
     println("Enrolling student ${command.studentId} in course ${command.courseId}")
     return arrayOf(
         Enrolled(
