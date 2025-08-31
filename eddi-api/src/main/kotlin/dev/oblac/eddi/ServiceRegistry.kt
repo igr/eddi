@@ -17,6 +17,11 @@ interface ServiceRegistry {
     fun start(commandBus: CommandBus, eventStore: EventStore)
 }
 
+/**
+ * Registers a service for the specified command type [C].
+ * The service is a function that takes a command of type [C] and returns an array
+ * of events of type [E].
+ */
 inline fun <reified C : Command, E : Event> ServiceRegistry.registerService(
     service: Service<C, E>
 ) {

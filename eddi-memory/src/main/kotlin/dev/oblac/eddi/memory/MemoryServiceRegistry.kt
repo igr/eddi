@@ -11,9 +11,8 @@ class MemoryServiceRegistry : ServiceRegistry {
         commandBus.registerCommandHandler { commandEnvelope ->
             val command = commandEnvelope.command
             @Suppress("UNCHECKED_CAST")
-            withService(command::class as KClass<out Command>) { service ->
-                service(command)
-            }.also { eventStore.storeEvents(commandEnvelope.id, it) }
+            withService(command::class) { it(command) }
+                .also { eventStore.storeEvents(commandEnvelope.id, it) }
         }
     }
 
