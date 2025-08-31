@@ -4,7 +4,6 @@ import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventBus
 import dev.oblac.eddi.EventEnvelope
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -83,7 +82,7 @@ class EventStoreOutbox(
      * Gets the pending events count (difference between stored and published).
      */
     fun getPendingEventsCount(): Long {
-        val storedCount = eventStore.getTotalEventsStored()
+        val storedCount = eventStore.totalEventsStored()
         return storedCount - totalEventsPublished.get()
     }
     
@@ -91,23 +90,18 @@ class EventStoreOutbox(
      * Processes events using index-based outbox pattern.
      * Compares lastPublishedIndex with storedEvents to find unpublished events.
      */
-    private suspend fun processOutboxEvents() {
+    private fun processOutboxEvents() {
         val lastPublished = lastPublishedIndex.get()
         val eventsToProcess = mutableListOf<EventEnvelope<Event>>()
         
-        // Get unpublished events by comparing index with stored events size
-        // todo DONT HOLD LOCK WHILE PUBLISHING as we dont need to block storage during publishing
-        // todo dont get all events! just get one by one using the index
-        eventStore.getStorageMutex().withLock {
-            val storedEvents = eventStore.getStoredEventsInternal()
-            val totalStored = storedEvents.size
-            if (lastPublished + 1 < totalStored) {
-                // Copy events that need to be published (from lastPublished+1 to end)
-                val startIndex = (lastPublished + 1).toInt()
-                eventsToProcess.addAll(storedEvents.subList(startIndex, totalStored))
-            }
+        // Get unpublished events using the new getLast method
+        val totalStored = eventStore.totalEventsStored()
+        if (lastPublished + 1 < totalStored) {
+            // Get events that need to be published (from lastPublished+1 to end)
+            val startIndex = (lastPublished + 1)
+            eventsToProcess.addAll(eventStore.getLast(startIndex.toInt()))
         }
-        
+
         if (eventsToProcess.isEmpty()) {
             return
         }

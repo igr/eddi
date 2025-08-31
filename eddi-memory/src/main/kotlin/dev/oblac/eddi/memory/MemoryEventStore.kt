@@ -100,7 +100,7 @@ class MemoryEventStore(
     /**
      * Gets the total number of events stored and published.
      */
-    fun getMetrics(): EventStoreMetrics {
+    fun metrics(): EventStoreMetrics {
         val storedCount = totalEventsStored.get()
         val publishedCount = if (::outbox.isInitialized) outbox.getTotalEventsPublished() else 0L
         val pendingCount = if (::outbox.isInitialized) outbox.getPendingEventsCount() else 0L
@@ -110,24 +110,18 @@ class MemoryEventStore(
             pendingInOutbox = pendingCount
         )
     }
-    
+
     /**
-     * Internal method for outbox to access storage mutex.
+     * Internal method for outbox to get events from a specific index.
      * Package-private for use by EventStoreOutbox only.
      */
-    internal fun getStorageMutex(): Mutex = storageMutex
-    
-    /**
-     * Internal method for outbox to access stored events.
-     * Package-private for use by EventStoreOutbox only.
-     */
-    internal fun getStoredEventsInternal(): List<EventEnvelope<Event>> = storedEvents
+    internal fun getLast(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
     
     /**
      * Internal method for outbox to get total events stored count.
      * Package-private for use by EventStoreOutbox only.
      */
-    internal fun getTotalEventsStored(): Long = totalEventsStored.get()
+    internal fun totalEventsStored(): Long = totalEventsStored.get()
 }
 
 /**
