@@ -1,6 +1,6 @@
 package dev.oblac.eddi
 
-interface EventStore {
+interface EventStore : EventStoreRepo {
 
     /**
      * IN API
@@ -14,5 +14,19 @@ interface EventStore {
      * The event is stored internally for later processing.
      */
     fun storeEvent(correlationId: Long, event: Event): EventEnvelope<Event>
+
+}
+
+interface EventStoreRepo {
+
+    /**
+     * Returns total events stored count.
+     */
+    fun totalEventsStored(): Long
+
+    /**
+     * Returns events from a specific index.
+     */
+    fun findLast(fromIndex: Int): List<EventEnvelope<Event>>
 
 }

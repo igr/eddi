@@ -76,25 +76,10 @@ class MemoryEventStore(
     }
     
     /**
-     * Retrieves all stored events, optionally filtered by correlation ID.
-     */
-    suspend fun getStoredEvents(correlationId: Long? = null): List<EventEnvelope<Event>> {
-        return storageMutex.withLock {
-            if (correlationId != null) {
-                storedEvents.filter { it.id == correlationId }
-            } else {
-                storedEvents.toList() // Return a copy to avoid concurrent modification
-            }
-        }
-    }
-    
-    /**
      * Retrieves events stored after a specific timestamp.
      */
-    suspend fun getEventsAfter(timestamp: Instant): List<EventEnvelope<Event>> {
-        return storageMutex.withLock {
-            storedEvents.filter { it.timestamp.isAfter(timestamp) }
-        }
+    fun findEventsAfter(timestamp: Instant): List<EventEnvelope<Event>> {
+        return storedEvents.filter { it.timestamp.isAfter(timestamp) }
     }
     
     /**
@@ -111,17 +96,9 @@ class MemoryEventStore(
         )
     }
 
-    /**
-     * Internal method for outbox to get events from a specific index.
-     * Package-private for use by EventStoreOutbox only.
-     */
-    internal fun getLast(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
+    override fun findLast(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
     
-    /**
-     * Internal method for outbox to get total events stored count.
-     * Package-private for use by EventStoreOutbox only.
-     */
-    internal fun totalEventsStored(): Long = totalEventsStored.get()
+    override fun totalEventsStored(): Long = totalEventsStored.get()
 }
 
 /**
