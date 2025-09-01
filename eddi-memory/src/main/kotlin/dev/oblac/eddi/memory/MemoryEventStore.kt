@@ -18,10 +18,10 @@ import java.util.concurrent.atomic.AtomicLong
  * - Maintains event ordering and provides retrieval capabilities
  * - Memory efficient: events stored only once, no separate outbox queue
  */
-class MemoryEventStore: EventStore {
+class MemoryEventStore(
+    private val eventStoreRepo: MemoryEventStoreRepo,
+): EventStore {
 
-    // Persistent storage for all events (ordered by insertion)
-    internal val storedEvents = mutableListOf<EventEnvelope<Event>>()
     private val storageMutex = Mutex()
 
     // Metrics and tracking
@@ -38,7 +38,7 @@ class MemoryEventStore: EventStore {
                     event = event,
                     timestamp = Instant.now()
                 )
-                storedEvents.add(envelope as EventEnvelope<Event>)
+                eventStoreRepo.storedEvents.add(envelope as EventEnvelope<Event>)
                 envelope
             }
 

@@ -4,13 +4,14 @@ import dev.oblac.eddi.*
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
-class MemoryEventStoreRepo(
-    private val es: MemoryEventStore
-) : EventStoreRepo {
+class MemoryEventStoreRepo : EventStoreRepo {
 
-    private val storedEvents = es.storedEvents
+    /**
+     * In-memory storage for all events (ordered by insertion)!
+     */
+    internal val storedEvents = mutableListOf<EventEnvelope<Event>>()       // maybe use ConcurrentLinkedQueue?
 
-    override fun totalEventsStored(): Long = es.totalEventsStored.get()
+    override fun totalEventsStored(): Long = storedEvents.size.toLong()
 
     override fun findLastEvent(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
 
