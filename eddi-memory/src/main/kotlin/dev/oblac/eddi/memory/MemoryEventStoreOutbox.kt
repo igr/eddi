@@ -97,7 +97,7 @@ class MemoryEventStoreOutbox(
         if (lastPublished + 1 < totalStored) {
             // Get events that need to be published (from lastPublished+1 to end)
             val startIndex = (lastPublished + 1)
-            eventsToProcess.addAll(eventStore.findLast(startIndex.toInt()))
+            eventsToProcess.addAll(eventStore.findLastEvent(startIndex.toInt()))
         }
 
         if (eventsToProcess.isEmpty()) {

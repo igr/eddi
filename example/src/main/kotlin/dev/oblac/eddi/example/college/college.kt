@@ -13,7 +13,7 @@ fun main() {
     with(eddi.serviceRegistry) {
         registerService(::registerStudent)
         registerService(::payTuition)
-        registerService(EnrollInCourseService(eddi.evetStore))
+        registerService(EnrollInCourseService(eddi.evetStoreRepo))
         registerService(::publishCourse)
         registerService(::gradeStudent)
         registerService(::deregisterStudent)

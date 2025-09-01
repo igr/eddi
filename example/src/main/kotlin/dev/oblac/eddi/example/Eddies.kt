@@ -8,9 +8,10 @@ fun createMemoryEddie(): Eddi {
     val commandBus: CommandBus = MemoryCommandBus().also { it.start() }
     // todo dont provide commandBus as ctor arg, but use start() method to pass it
     val commandStore: CommandStore = MemoryCommandStore(commandBus).also { it.start() }
-    val evetStore: EventStore = MemoryEventStore()
+    val evetStore = MemoryEventStore()
+    val evetStoreRepo: EventStoreRepo = MemoryEventStoreRepo(evetStore)
     val eventBus: EventBus = MemoryEventBus(evetStore).also { it.start() }
-    val eventStoreOutbox: EventStoreOutbox = MemoryEventStoreOutbox(eventBus, evetStore).also { it.start() }
+    val eventStoreOutbox: EventStoreOutbox = MemoryEventStoreOutbox(eventBus, evetStoreRepo).also { it.start() }
     val serviceRegistry: ServiceRegistry = MemoryServiceRegistry().also { it.start(commandBus, evetStore) }
     val projector: Projector = MemoryProjector(eventBus)
 
@@ -19,6 +20,7 @@ fun createMemoryEddie(): Eddi {
         commandStore,
         eventBus,
         evetStore,
+        evetStoreRepo,
         eventStoreOutbox,
         serviceRegistry,
         projector

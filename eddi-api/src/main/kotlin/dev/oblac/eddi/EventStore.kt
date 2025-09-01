@@ -1,6 +1,6 @@
 package dev.oblac.eddi
 
-interface EventStore : EventStoreRepo {
+interface EventStore {
 
     /**
      * IN API
@@ -21,7 +21,7 @@ interface EventStoreRepo {
     /**
      * Returns events from a specific index.
      */
-    fun findLast(fromIndex: Int): List<EventEnvelope<Event>>
+    fun findLastEvent(fromIndex: Int): List<EventEnvelope<Event>>
 
 
     fun findLastTaggedEvent(eventType: EventType, tag: Tag): EventEnvelope<Event>?
