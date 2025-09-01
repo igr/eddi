@@ -47,6 +47,7 @@ data class Eddi(
     val commandStore: CommandStore,
     val eventBus: EventBus,
     val evetStore: EventStore,
+    val eventStoreOutbox: EventStoreOutbox,
     val serviceRegistry: ServiceRegistry,
     val projector: Projector
 )

@@ -3,6 +3,7 @@ package dev.oblac.eddi.memory
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventBus
 import dev.oblac.eddi.EventEnvelope
+import dev.oblac.eddi.EventStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -12,7 +13,9 @@ import kotlin.reflect.KClass
 
 // todo extract eventHandler function signature
 
-class MemoryEventBus : EventBus {
+class MemoryEventBus(
+    val eventStore : EventStore
+) : EventBus {
     private val eventChannel = Channel<EventEnvelope<Event>>(Channel.UNLIMITED)
     private val scope = CoroutineScope(Dispatchers.Default)
     private val handlers = mutableMapOf<KClass<out Event>, (EventEnvelope<Event>) -> Array<Event>>()
@@ -40,8 +43,7 @@ class MemoryEventBus : EventBus {
         val handler = handlers[eventClass]
         if (handler != null) {
             handler(eventEnvelope).forEach { resultEvent ->
-                val newEventEnvelope = EventEnvelope(eventEnvelope.correlationId, resultEvent)
-                publishEvent(newEventEnvelope)
+                eventStore.storeEvent(eventEnvelope.correlationId, resultEvent)
             }
         }
     }

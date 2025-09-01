@@ -1,9 +1,6 @@
 package dev.oblac.eddi.memory
 
-import dev.oblac.eddi.Event
-import dev.oblac.eddi.EventBus
-import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.EventStoreRepo
+import dev.oblac.eddi.*
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -18,11 +15,11 @@ import java.util.concurrent.atomic.AtomicLong
  * - Maintaining event ordering through sequential processing
  * - Providing thread-safe access to outbox state
  */
-class EventStoreOutbox(
+class MemoryEventStoreOutbox(
     private val eventBus: EventBus,
     private val eventStore: EventStoreRepo,
     private val processingDelayMs: Long = 100L
-) {
+) : EventStoreOutbox {
     
     // Index tracking the last published event (outbox pointer)
     private val lastPublishedIndex = AtomicLong(-1)

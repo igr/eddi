@@ -18,17 +18,11 @@ import kotlin.reflect.full.memberProperties
  * - Maintains event ordering and provides retrieval capabilities
  * - Memory efficient: events stored only once, no separate outbox queue
  */
-class MemoryEventStore(
-    private val eventBus: EventBus,
-    private val processingDelayMs: Long = 100L // Configurable delay for outbox processing
-) : EventStore {
+class MemoryEventStore: EventStore {
 
     // Persistent storage for all events (ordered by insertion)
     private val storedEvents = mutableListOf<EventEnvelope<Event>>()
     private val storageMutex = Mutex()
-
-    // Outbox for handling asynchronous event publishing
-    private lateinit var outbox: EventStoreOutbox
 
     // Metrics and tracking
     private val totalEventsStored = AtomicLong(0)
@@ -53,40 +47,6 @@ class MemoryEventStore(
 
             envelope
         }
-    }
-
-    override fun start() {
-        println("Starting MemoryEventStore...")
-
-        // Initialize and start the outbox
-        outbox = EventStoreOutbox(eventBus, this, processingDelayMs)
-        outbox.start()
-
-        println("MemoryEventStore started with outbox processing")
-    }
-
-    /**
-     * Stops the event processing.
-     */
-    fun stop() {
-        println("Stopping MemoryEventStore...")
-        if (::outbox.isInitialized) {
-            outbox.stop()
-        }
-    }
-
-    /**
-     * Gets the total number of events stored and published.
-     */
-    fun metrics(): EventStoreMetrics {
-        val storedCount = totalEventsStored.get()
-        val publishedCount = if (::outbox.isInitialized) outbox.getTotalEventsPublished() else 0L
-        val pendingCount = if (::outbox.isInitialized) outbox.getPendingEventsCount() else 0L
-        return EventStoreMetrics(
-            totalStored = storedCount,
-            totalPublished = publishedCount,
-            pendingInOutbox = pendingCount
-        )
     }
 
     override fun totalEventsStored(): Long = totalEventsStored.get()
@@ -121,12 +81,3 @@ class MemoryEventStore(
         }
     }
 }
-
-/**
- * Metrics data class for monitoring event store performance.
- */
-data class EventStoreMetrics(
-    val totalStored: Long,
-    val totalPublished: Long,
-    val pendingInOutbox: Long
-)
