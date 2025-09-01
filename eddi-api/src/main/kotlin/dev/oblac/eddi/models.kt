@@ -24,6 +24,18 @@ interface Event {
     }
 }
 
+/**
+ * Reflectively extracts all Tag properties from the Event instance.
+ * Returns a set of Tag instances found in the Event.
+ */
+fun Event.tags(): Set<Tag> = this::class.members
+    .filter { prop ->
+        val kclass = prop.returnType.classifier as? KClass<*>
+        kclass != null && Tag::class.java.isAssignableFrom(kclass.java)
+    }
+    .mapNotNull { runCatching { it.call(this) as? Tag }.getOrNull() }
+    .toSet()
+
 interface Tag {
     val id: String
 }
@@ -35,10 +47,11 @@ data class CommandEnvelope<T : Command>(
 )
 
 data class EventEnvelope<E : Event>(
-    val globalSeq: Long,
+    val sequence: Long,
     val correlationId: Long,   // todo add CorrelationId value type
     val event: E,
     val eventType: EventType = EventType.of(event::class),
+    val history: Map<Tag, Long>,
     val timestamp: Instant = Instant.now(),
 )
 

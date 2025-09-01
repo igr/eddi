@@ -3,6 +3,7 @@ package dev.oblac.eddi.memory
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventStore
+import dev.oblac.eddi.tags
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,6 +30,10 @@ class MemoryEventStore(
 
     override fun <E: Event> storeEvent(correlationId: Long, event: E): EventEnvelope<E> {
         return runBlocking {        // todo is it blocking?
+            val tags = event.tags().associateWith { tag ->
+                eventStoreRepo.findLastTaggedEvent(tag)?.sequence ?: 0L
+            }
+
             // Store event persistently (outbox pattern - store first)
             val envelope = storageMutex.withLock {
                 val globalSeq = totalEventsStored.incrementAndGet()
@@ -36,6 +41,7 @@ class MemoryEventStore(
                     globalSeq,
                     correlationId = correlationId,
                     event = event,
+                    history = tags,
                     timestamp = Instant.now()
                 )
                 eventStoreRepo.storedEvents.add(envelope as EventEnvelope<Event>)
