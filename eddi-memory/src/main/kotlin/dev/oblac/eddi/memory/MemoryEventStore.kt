@@ -11,7 +11,7 @@ import kotlin.reflect.full.memberProperties
 
 /**
  * Memory-based event store implementation.
- * 
+ *
  * This implementation:
  * - Stores events persistently in memory using thread-safe collections
  * - Delegates outbox pattern functionality to EventStoreOutbox
@@ -22,48 +22,49 @@ class MemoryEventStore(
     private val eventBus: EventBus,
     private val processingDelayMs: Long = 100L // Configurable delay for outbox processing
 ) : EventStore {
-    
+
     // Persistent storage for all events (ordered by insertion)
     private val storedEvents = mutableListOf<EventEnvelope<Event>>()
     private val storageMutex = Mutex()
-    
+
     // Outbox for handling asynchronous event publishing
     private lateinit var outbox: EventStoreOutbox
-    
+
     // Metrics and tracking
     private val totalEventsStored = AtomicLong(0)
 
-    override fun storeEvent(correlationId: Long, event: Event): EventEnvelope<Event> {
-        return runBlocking {
-            val envelope = EventEnvelope(
-                id = correlationId,
-                event = event,
-                timestamp = Instant.now()
-            )
-            
+    override fun <E: Event> storeEvent(correlationId: Long, event: E): EventEnvelope<E> {
+        return runBlocking {        // todo is it blocking?
             // Store event persistently (outbox pattern - store first)
-            storageMutex.withLock {
-                storedEvents.add(envelope)
-                totalEventsStored.incrementAndGet()
+            val envelope = storageMutex.withLock {
+                val globalSeq = totalEventsStored.incrementAndGet()
+                val envelope = EventEnvelope(
+                    globalSeq,
+                    correlationId = correlationId,
+                    event = event,
+                    timestamp = Instant.now()
+                )
+                storedEvents.add(envelope as EventEnvelope<Event>)
+                envelope
             }
-            
+
             // Event is now available for outbox processing via index comparison
             println("Event stored for processing: ${event::class.simpleName}")
-            
+
             envelope
         }
     }
 
     override fun start() {
         println("Starting MemoryEventStore...")
-        
+
         // Initialize and start the outbox
         outbox = EventStoreOutbox(eventBus, this, processingDelayMs)
         outbox.start()
-        
+
         println("MemoryEventStore started with outbox processing")
     }
-    
+
     /**
      * Stops the event processing.
      */
@@ -73,14 +74,14 @@ class MemoryEventStore(
             outbox.stop()
         }
     }
-    
+
     /**
      * Retrieves events stored after a specific timestamp.
      */
     fun findEventsAfter(timestamp: Instant): List<EventEnvelope<Event>> {
         return storedEvents.filter { it.timestamp.isAfter(timestamp) }
     }
-    
+
     /**
      * Gets the total number of events stored and published.
      */
@@ -106,13 +107,13 @@ class MemoryEventStore(
             }
             val event = it.event
             val tagClass = tag::class
-            
+
             // Find event property that is of the same type as the tag implementation
             val eventProperties = event::class.memberProperties
-            val tagProperty = eventProperties.find { property -> 
+            val tagProperty = eventProperties.find { property ->
                 property.returnType.classifier == tagClass
             }
-            
+
             if (tagProperty != null) {
                 try {
                     @Suppress("UNCHECKED_CAST")
@@ -122,7 +123,7 @@ class MemoryEventStore(
                     return@lastOrNull false
                 }
             }
-            
+
             false
         }
     }

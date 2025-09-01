@@ -13,7 +13,7 @@ interface EventStore : EventStoreRepo {
      * Stores the given event and returns an [EventEnvelope] containing the event and its metadata.
      * The event is stored internally for later processing.
      */
-    fun storeEvent(correlationId: Long, event: Event): EventEnvelope<Event>
+    fun <E: Event> storeEvent(correlationId: Long, event: E): EventEnvelope<E>
 
 }
 
