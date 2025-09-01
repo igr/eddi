@@ -6,7 +6,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
@@ -100,30 +99,31 @@ class MemoryEventStore(
 
     override fun findLast(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
 
-    override fun findLastTaggedEvent(eventType: EventType, tagklass: KClass<out Tag>, id: String): EventEnvelope<Event>? {
+    override fun findLastTaggedEvent(eventType: EventType, tag: Tag): EventEnvelope<Event>? {
         return storedEvents.lastOrNull {
             if (it.eventType != eventType) {
                 return@lastOrNull false
             }
             val event = it.event
-            val typedId: String? = if (tagklass.isInstance(event)) {
-                // use reflection to get the id field named "<tagKlass>Id"
-                val propertyName = tagklass.simpleName?.replaceFirstChar { it.lowercase() }
-                try {
-                    val eventClass = event::class
-                    val properties = eventClass.memberProperties
-                    val property = properties.find { it.name == propertyName }
-                    @Suppress("UNCHECKED_CAST")
-                    val stringProperty = property as? KProperty1<Any, String>
-                    stringProperty?.get(event)
-                } catch (e: Exception) {
-                    null
-                }
-            } else {
-                return@lastOrNull false
+            val tagClass = tag::class
+            
+            // Find event property that is of the same type as the tag implementation
+            val eventProperties = event::class.memberProperties
+            val tagProperty = eventProperties.find { property -> 
+                property.returnType.classifier == tagClass
             }
-
-            typedId == id
+            
+            if (tagProperty != null) {
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val tagPropertyValue = (tagProperty as KProperty1<Any, Tag>).get(event)
+                    return@lastOrNull tagPropertyValue == tag
+                } catch (e: Exception) {
+                    return@lastOrNull false
+                }
+            }
+            
+            false
         }
     }
 }

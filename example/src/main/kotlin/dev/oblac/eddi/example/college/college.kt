@@ -24,11 +24,13 @@ fun main() {
     // USAGE
 
     with(eddi.commandStore) {
-        storeCommand(RegisterStudent("S001", "John", "Doe", "john.doe@college.edu"))
-        storeCommand(PublishCourse("CS101", "Introduction to Computer Science", "Dr. Smith", 3))
-        storeCommand(PayTuition("S001", 1500.0, "Fall 2024"))
-        storeCommand(EnrollInCourse("S001", "CS101"))
-        storeCommand(GradeStudent("S001", "CS101", "A"))
+        val student = StudentTag("S001")
+        val course = CourseTag("CS101")
+        storeCommand(RegisterStudent(student, "John", "Doe", "john.doe@college.edu"))
+        storeCommand(PublishCourse(course, "Introduction to Computer Science", "Dr. Smith", 3))
+        storeCommand(PayTuition(student, 1500.0, "Fall 2024"))
+        storeCommand(EnrollInCourse(student, course))
+        storeCommand(GradeStudent(student, course, "A"))
     }
 
     println("College system initialized with sample commands")
@@ -39,7 +41,7 @@ fun registerStudent(command: RegisterStudent): Array<StudentRegistered> {
     println("🔥 Registering student: ${command.firstName} ${command.lastName}")
     return arrayOf(
         StudentRegistered(
-            studentId = command.studentId,
+            student = command.student,
             firstName = command.firstName,
             lastName = command.lastName,
             email = command.email
@@ -48,10 +50,10 @@ fun registerStudent(command: RegisterStudent): Array<StudentRegistered> {
 }
 
 fun payTuition(command: PayTuition): Array<TuitionPaid> {
-    println("🔥 Processing tuition payment for student: ${command.studentId}")
+    println("🔥 Processing tuition payment for student: ${command.student}")
     return arrayOf(
         TuitionPaid(
-            studentId = command.studentId,
+            student = command.student,
             amount = command.amount,
             semester = command.semester
         )
@@ -61,19 +63,19 @@ fun payTuition(command: PayTuition): Array<TuitionPaid> {
 class EnrollInCourseService(val evetStore: EventStoreRepo) : Service<EnrollInCourse, Enrolled> {
     override fun invoke(command: EnrollInCourse): Array<Enrolled> {
         // 1) check if the student is registered
-        evetStore.findLastTaggedEvent(Event.type<StudentRegistered>(), StudentTag::class, command.studentId)
-            ?: throw IllegalStateException("Student ${command.studentId} is not registered")    // dont throw exception!
+        evetStore.findLastTaggedEvent(Event.type<StudentRegistered>(), command.student)
+            ?: throw IllegalStateException("Student ${command.student} is not registered")    // dont throw exception!
 
         // 2) check the course is published
-        evetStore.findLastTaggedEvent(Event.type<CoursePublished>(), CourseTag::class, command.courseId)
-            ?: throw IllegalStateException("Course ${command.courseId} is not published")
+        evetStore.findLastTaggedEvent(Event.type<CoursePublished>(), command.course)
+            ?: throw IllegalStateException("Course ${command.course} is not published")
 
-        println("🔥 Enrolling student ${command.studentId} in course ${command.courseId}")
+        println("🔥 Enrolling student ${command.student} in course ${command.course}")
 
         return arrayOf(
             Enrolled(
-                studentId = command.studentId,
-                courseId = command.courseId
+                student = command.student,
+                course = command.course
             )
         )
     }
@@ -83,7 +85,7 @@ fun publishCourse(command: PublishCourse): Array<CoursePublished> {
     println("🔥 Publishing course: ${command.courseName}")
     return arrayOf(
         CoursePublished(
-            courseId = command.courseId,
+            course = command.course,
             courseName = command.courseName,
             instructor = command.instructor,
             credits = command.credits
@@ -92,21 +94,21 @@ fun publishCourse(command: PublishCourse): Array<CoursePublished> {
 }
 
 fun gradeStudent(command: GradeStudent): Array<Graded> {
-    println("🔥 Grading student ${command.studentId} in course ${command.courseId}: ${command.grade}")
+    println("🔥 Grading ${command.student} in ${command.course}: ${command.grade}")
     return arrayOf(
         Graded(
-            studentId = command.studentId,
-            courseId = command.courseId,
+            student = command.student,
+            course = command.course,
             grade = command.grade
         )
     )
 }
 
 fun deregisterStudent(command: DeregisterStudent): Array<StudentDeregistered> {
-    println("🔥 Processing student quit: ${command.studentId}")
+    println("🔥 Processing student quit: ${command.student}")
     return arrayOf(
         StudentDeregistered(
-            studentId = command.studentId,
+            student = command.student,
             reason = command.reason
         )
     )

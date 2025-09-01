@@ -24,7 +24,9 @@ interface Event {
     }
 }
 
-interface Tag
+interface Tag {
+    val id: String
+}
 
 data class CommandEnvelope<T : Command>(
     val id: Long,

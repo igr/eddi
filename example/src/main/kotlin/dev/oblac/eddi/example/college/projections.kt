@@ -6,7 +6,7 @@ import java.time.Instant
 
 // Projection data classes
 data class StudentProfile(
-    val studentId: String,
+    val student: StudentTag,
     var firstName: String,
     var lastName: String,
     var email: String,
@@ -16,7 +16,7 @@ data class StudentProfile(
 )
 
 data class CourseInfo(
-    val courseId: String,
+    val course: CourseTag,
     var courseName: String,
     var instructor: String,
     var credits: Int,
@@ -24,12 +24,12 @@ data class CourseInfo(
 )
 
 data class EnrollmentRecord(
-    val courseId: String,
+    val course: CourseTag,
     val enrolledAt: Instant
 )
 
 data class FinancialAccount(
-    val studentId: String,
+    val student: StudentTag,
     var totalPaid: Double = 0.0,
     val payments: MutableList<PaymentRecord> = mutableListOf()
 )
@@ -41,7 +41,7 @@ data class PaymentRecord(
 )
 
 data class TranscriptEntry(
-    val courseId: String,
+    val course: CourseTag,
     val grade: String,
     val gradedAt: Instant
 )
@@ -50,52 +50,52 @@ data class TranscriptEntry(
 fun createProjections(eddi: Eddi) {
 
     // In-memory data stores for projections
-    val studentProfiles = mutableMapOf<String, StudentProfile>()
-    val courseCatalog = mutableMapOf<String, CourseInfo>()
-    val enrollmentRecords = mutableMapOf<String, MutableList<EnrollmentRecord>>()
-    val financialAccounts = mutableMapOf<String, FinancialAccount>()
-    val academicTranscripts = mutableMapOf<String, MutableList<TranscriptEntry>>()
+    val studentProfiles = mutableMapOf<StudentTag, StudentProfile>()
+    val courseCatalog = mutableMapOf<CourseTag, CourseInfo>()
+    val enrollmentRecords = mutableMapOf<StudentTag, MutableList<EnrollmentRecord>>()
+    val financialAccounts = mutableMapOf<StudentTag, FinancialAccount>()
+    val academicTranscripts = mutableMapOf<StudentTag, MutableList<TranscriptEntry>>()
 
     // Projectors
     eddi.projector.projectorForEvent(StudentRegistered::class) { event ->
-        studentProfiles[event.studentId] = StudentProfile(
-            studentId = event.studentId,
+        studentProfiles[event.student] = StudentProfile(
+            student = event.student,
             firstName = event.firstName,
             lastName = event.lastName,
             email = event.email,
             registeredAt = event.registeredAt
         )
-        println("Projected StudentRegistered to StudentProfile: ${studentProfiles[event.studentId]}")
+        println("Projected StudentRegistered to StudentProfile: ${studentProfiles[event.student]}")
     }
 
     eddi.projector.projectorForEvent(CoursePublished::class) { event ->
-        courseCatalog[event.courseId] = CourseInfo(
-            courseId = event.courseId,
+        courseCatalog[event.course] = CourseInfo(
+            course = event.course,
             courseName = event.courseName,
             instructor = event.instructor,
             credits = event.credits,
             publishAt = event.publishAt
         )
-        println("Projected CoursePublished to CourseInfo: ${courseCatalog[event.courseId]}")
+        println("Projected CoursePublished to CourseInfo: ${courseCatalog[event.course]}")
     }
     eddi.projector.projectorForEvent(Enrolled::class) { event ->
-        val records = enrollmentRecords.getOrPut(event.studentId) { mutableListOf() }
-        records.add(EnrollmentRecord(courseId = event.courseId, enrolledAt = event.enrolledAt))
+        val records = enrollmentRecords.getOrPut(event.student) { mutableListOf() }
+        records.add(EnrollmentRecord(course = event.course, enrolledAt = event.enrolledAt))
         println("Projected Enrolled to EnrollmentRecord: ${records.last()}")
     }
     eddi.projector.projectorForEvent(TuitionPaid::class) { event ->
-        val account = financialAccounts.getOrPut(event.studentId) { FinancialAccount(studentId = event.studentId) }
+        val account = financialAccounts.getOrPut(event.student) { FinancialAccount(student = event.student) }
         account.totalPaid += event.amount
         account.payments.add(PaymentRecord(amount = event.amount, paidAt = event.paidAt, semester = event.semester))
         println("Projected TuitionPaid to FinancialAccount: ${account}")
     }
     eddi.projector.projectorForEvent(Graded::class) { event ->
-        val transcript = academicTranscripts.getOrPut(event.studentId) { mutableListOf() }
-        transcript.add(TranscriptEntry(courseId = event.courseId, grade = event.grade, gradedAt = event.gradedAt))
+        val transcript = academicTranscripts.getOrPut(event.student) { mutableListOf() }
+        transcript.add(TranscriptEntry(course = event.course, grade = event.grade, gradedAt = event.gradedAt))
         println("Projected Graded to TranscriptEntry: ${transcript.last()}")
     }
     eddi.projector.projectorForEvent(StudentDeregistered::class) { event ->
-        studentProfiles[event.studentId]?.let { profile ->
+        studentProfiles[event.student]?.let { profile ->
             profile.deregisteredAt = event.deregisteredAt
             profile.deregistrationReason = event.reason
             println("Projected StudentDeregistered to StudentProfile: $profile")
