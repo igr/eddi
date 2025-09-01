@@ -12,7 +12,7 @@ class MemoryProjector(val eventBus: EventBus) : Projector {
         eventBus.registerEventHandler(eventType, { event ->
             val projection = handler(event.event as E)
             println("Event ${event.event} to projection $projection")
-            triggerProjection(event.id, projection)
+            triggerProjection(event.correlationId, projection)
             arrayOf()
         })
     }

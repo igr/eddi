@@ -76,13 +76,6 @@ class MemoryEventStore(
     }
 
     /**
-     * Retrieves events stored after a specific timestamp.
-     */
-    fun findEventsAfter(timestamp: Instant): List<EventEnvelope<Event>> {
-        return storedEvents.filter { it.timestamp.isAfter(timestamp) }
-    }
-
-    /**
      * Gets the total number of events stored and published.
      */
     fun metrics(): EventStoreMetrics {

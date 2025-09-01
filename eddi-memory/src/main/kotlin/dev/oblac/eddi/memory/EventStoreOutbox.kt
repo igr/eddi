@@ -3,6 +3,7 @@ package dev.oblac.eddi.memory
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventBus
 import dev.oblac.eddi.EventEnvelope
+import dev.oblac.eddi.EventStoreRepo
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class EventStoreOutbox(
     private val eventBus: EventBus,
-    private val eventStore: MemoryEventStore,
+    private val eventStore: EventStoreRepo,
     private val processingDelayMs: Long = 100L
 ) {
     

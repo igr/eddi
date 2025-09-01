@@ -40,7 +40,7 @@ class MemoryEventBus : EventBus {
         val handler = handlers[eventClass]
         if (handler != null) {
             handler(eventEnvelope).forEach { resultEvent ->
-                val newEventEnvelope = EventEnvelope(eventEnvelope.id, resultEvent)
+                val newEventEnvelope = EventEnvelope(eventEnvelope.correlationId, resultEvent)
                 publishEvent(newEventEnvelope)
             }
         }

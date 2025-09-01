@@ -35,10 +35,11 @@ data class CommandEnvelope<T : Command>(
 )
 
 data class EventEnvelope<E : Event>(
-    val id: Long,   // todo add CorrelationId value type
+    val globalSeq: Long,
+    val correlationId: Long,   // todo add CorrelationId value type
     val event: E,
     val eventType: EventType = EventType.of(event::class),
-    val timestamp: Instant = Instant.now(), // todo remove where set in the code
+    val timestamp: Instant = Instant.now(),
 )
 
 data class Eddi(
