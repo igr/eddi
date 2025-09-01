@@ -1,16 +1,28 @@
 package dev.oblac.eddi
 
 import java.time.Instant
+import kotlin.reflect.KClass
 
 /**
  * Marker interface for commands.
  */
 interface Command
 
+@JvmInline
+value class EventType(val name: String) {
+    companion object {
+        fun of(klass: KClass<*>) = EventType(klass.simpleName ?: error("Event class must have a simple name"))
+    }
+}
+
 /**
  * Marker interface for Events.
  */
-interface Event
+interface Event {
+    companion object {
+        inline fun <reified T : Event> type() = EventType.of(T::class)
+    }
+}
 
 interface Tag
 
@@ -23,6 +35,7 @@ data class CommandEnvelope<T : Command>(
 data class EventEnvelope<E : Event>(
     val id: Long,   // todo add CorrelationId value type
     val event: E,
+    val eventType: EventType = EventType.of(event::class),
     val timestamp: Instant = Instant.now(), // todo remove where set in the code
 )
 

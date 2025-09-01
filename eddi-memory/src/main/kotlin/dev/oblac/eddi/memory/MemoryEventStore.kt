@@ -100,13 +100,12 @@ class MemoryEventStore(
 
     override fun findLast(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
 
-    override fun findLastTaggedEvent(klass: KClass<out Event>, tagklass: KClass<out Tag>, id: String): EventEnvelope<Event>? {
+    override fun findLastTaggedEvent(eventType: EventType, tagklass: KClass<out Tag>, id: String): EventEnvelope<Event>? {
         return storedEvents.lastOrNull {
-            val event = it.event
-            if (event::class != klass) {
+            if (it.eventType != eventType) {
                 return@lastOrNull false
             }
-
+            val event = it.event
             val typedId: String? = if (tagklass.isInstance(event)) {
                 // use reflection to get the id field named "<tagKlass>Id"
                 val propertyName = tagklass.simpleName?.replaceFirstChar { it.lowercase() }

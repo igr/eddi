@@ -5,7 +5,7 @@ import dev.oblac.eddi.Event
 import dev.oblac.eddi.Tag
 import java.time.Instant
 
-interface StudentId : Tag {
+interface StudentTag : Tag {
     val studentId: String
 }
 
@@ -16,7 +16,7 @@ data class StudentRegistered(
     val lastName: String,
     val email: String,
     val registeredAt: Instant = Instant.now()
-) : Event, StudentId
+) : Event, StudentTag
 
 // Payment event - depends on StudentRegistered
 data class TuitionPaid(
@@ -24,7 +24,7 @@ data class TuitionPaid(
     val amount: Double,
     val paidAt: Instant = Instant.now(),
     val semester: String
-) : Event, StudentId
+) : Event, StudentTag
 
 // Enrollment event - depends on StudentRegistered
 data class Enrolled(
@@ -33,7 +33,7 @@ data class Enrolled(
     val enrolledAt: Instant = Instant.now()
 ) : Event
 
-interface CourseId : Tag {
+interface CourseTag : Tag {
     val courseId: String
 }
 
@@ -44,7 +44,7 @@ data class CoursePublished(
     val instructor: String,
     val credits: Int,
     val publishAt: Instant = Instant.now()
-) : Event, CourseId
+) : Event, CourseTag
 
 // Grading event - depends on both Enrolled and CoursePublished
 data class Graded(

@@ -1,5 +1,6 @@
 package dev.oblac.eddi.example.college
 
+import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventStoreRepo
 import dev.oblac.eddi.Service
 import dev.oblac.eddi.example.createMemoryEddie
@@ -60,11 +61,11 @@ fun payTuition(command: PayTuition): Array<TuitionPaid> {
 class EnrollInCourseService(val evetStore: EventStoreRepo) : Service<EnrollInCourse, Enrolled> {
     override fun invoke(command: EnrollInCourse): Array<Enrolled> {
         // 1) check if the student is registered
-        evetStore.findLastTaggedEvent(StudentRegistered::class, StudentId::class, command.studentId)
+        evetStore.findLastTaggedEvent(Event.type<StudentRegistered>(), StudentTag::class, command.studentId)
             ?: throw IllegalStateException("Student ${command.studentId} is not registered")    // dont throw exception!
 
         // 2) check the course is published
-        evetStore.findLastTaggedEvent(CoursePublished::class, CourseId::class, command.courseId)
+        evetStore.findLastTaggedEvent(Event.type<CoursePublished>(), CourseTag::class, command.courseId)
             ?: throw IllegalStateException("Course ${command.courseId} is not published")
 
         println("🔥 Enrolling student ${command.studentId} in course ${command.courseId}")

@@ -8,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import java.time.Instant
 import kotlin.reflect.KClass
 
 // todo extract eventHandler function signature
@@ -41,7 +40,7 @@ class MemoryEventBus : EventBus {
         val handler = handlers[eventClass]
         if (handler != null) {
             handler(eventEnvelope).forEach { resultEvent ->
-                val newEventEnvelope = EventEnvelope(eventEnvelope.id, resultEvent, Instant.now())
+                val newEventEnvelope = EventEnvelope(eventEnvelope.id, resultEvent)
                 publishEvent(newEventEnvelope)
             }
         }
