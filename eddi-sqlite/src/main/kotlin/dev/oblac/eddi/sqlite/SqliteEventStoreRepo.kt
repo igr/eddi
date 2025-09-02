@@ -201,7 +201,6 @@ class SqliteEventStoreRepo(
         try {
             TransactionUtils.safeTransaction(database) {
                 EventEnvelopeTable.batchInsert(envelopes) { envelope ->
-                    val a = JsonUtils.serializeEvent(envelope.event)
                     this[EventEnvelopeTable.sequence] = envelope.sequence
                     this[EventEnvelopeTable.correlationId] = envelope.correlationId
                     this[EventEnvelopeTable.eventType] = envelope.eventType.name
@@ -222,8 +221,6 @@ class SqliteEventStoreRepo(
      * Converts a database row to an EventEnvelope.
      */
     private fun rowToEventEnvelope(row: ResultRow): EventEnvelope<Event> {
-        val json = row[EventEnvelopeTable.eventJson]
-        val a: Event = JsonUtils.deserializeEvent(json)
         return try {
             EventEnvelope(
                 sequence = row[EventEnvelopeTable.sequence],
@@ -235,7 +232,7 @@ class SqliteEventStoreRepo(
             )
         } catch (e: Exception) {
             throw SqliteEventStoreException(
-                "Failed to deserialize event envelope from database row",
+                "Failed to deserialize event envelope from database row. Event JSON: ${row[EventEnvelopeTable.eventJson]}",
                 e
             )
         }
