@@ -6,4 +6,5 @@ rootProject.name = "eddi"
 
 include("eddi-api")
 include("eddi-memory")
+include("eddi-sqlite")
 include("example")

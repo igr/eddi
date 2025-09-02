@@ -10,4 +10,6 @@ application {
 dependencies {
     implementation(project(":eddi-api"))
     implementation(project(":eddi-memory"))
+    implementation(project(":eddi-sqlite"))
+    implementation(libs.kotlinx.coroutines)
 }
