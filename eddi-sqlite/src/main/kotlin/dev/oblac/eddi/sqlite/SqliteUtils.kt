@@ -8,30 +8,17 @@ object Sqlite {
      * Configures SQLite database for optimal performance and concurrency.
      */
     fun configureSqliteForPerformance(database: Database) {
-        transaction(database) {
-            exec("PRAGMA journal_mode=WAL")
-
-            // Balanced synchronous mode (better performance than FULL, safer than OFF)
-            exec("PRAGMA synchronous=NORMAL")
-
-            // Larger cache for better performance
-            exec("PRAGMA cache_size=10000")
-
-            // Disable foreign key constraints for performance (we manage integrity)
-            exec("PRAGMA foreign_keys=OFF")
-
-            // Use memory for temporary storage
-            exec("PRAGMA temp_store=MEMORY")
-
-            // Optimize for append-heavy workloads
-            exec("PRAGMA optimize")
-
-            // Set a reasonable timeout for busy situations
-            exec("PRAGMA busy_timeout=30000") // 30 seconds
-
-            // Enable memory-mapped I/O for better performance on modern systems
-            exec("PRAGMA mmap_size=268435456") // 256MB
-        }
+        val commands = arrayOf(
+            //"PRAGMA journal_mode=WAL",
+            "PRAGMA synchronous=NORMAL;",
+            "PRAGMA cache_size=10000;",
+            "PRAGMA foreign_keys=OFF;",
+            "PRAGMA temp_store=MEMORY;",
+            "PRAGMA optimize;",
+            "PRAGMA busy_timeout=30000;", // 30 seconds
+            "PRAGMA mmap_size=268435456;" // 256MB
+        )
+        database.connector().executeInBatch(commands.toList())
     }
 
     /**

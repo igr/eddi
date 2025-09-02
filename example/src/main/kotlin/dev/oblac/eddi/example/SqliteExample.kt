@@ -59,7 +59,7 @@ fun main() = runBlocking {
         println("Total events stored: $totalEvents")
         
         // Find all events from beginning
-        val allEvents = eventStoreRepo.findLastEvent(0)
+        val allEvents = eventStoreRepo.findLastEvents(0)
         println("Found ${allEvents.size} events from index 0")
         
         // Find last event for a specific student

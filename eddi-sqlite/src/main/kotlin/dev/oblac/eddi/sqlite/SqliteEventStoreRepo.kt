@@ -31,16 +31,8 @@ class SqliteEventStoreRepo(
         runBlocking {
             ensureInitialized()
         }
-        
-        // Configure SQLite for optimal performance
-        try {
-            //TransactionUtils.configureSqliteForPerformance(database)
-        } catch (e: Exception) {
-            throw SqliteEventStoreException(
-                "Failed to configure SQLite database at $databasePath",
-                e
-            )
-        }
+
+        //configureSqliteForPerformance(database)
     }
     
     /**
@@ -102,7 +94,7 @@ class SqliteEventStoreRepo(
         }
     }
     
-    override fun findLastEvent(fromIndex: Int): List<EventEnvelope<Event>> {
+    override fun findLastEvents(fromIndex: Int): List<EventEnvelope<Event>> {
         return try {
             TransactionUtils.safeTransaction(database) {
                 EventEnvelopeTable
@@ -210,6 +202,7 @@ class SqliteEventStoreRepo(
     /**
      * Checks if an event has a matching tag using reflection.
      * This mirrors the logic from MemoryEventStoreRepo.
+     * todo REMOVE!
      */
     private fun hasMatchingTag(event: Event, tag: Tag): Boolean {
         val tagClass = tag::class

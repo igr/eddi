@@ -21,7 +21,7 @@ interface EventStoreRepo {
     /**
      * Returns events from a specific index.
      */
-    fun findLastEvent(fromIndex: Int): List<EventEnvelope<Event>>
+    fun findLastEvents(fromIndex: Int): List<EventEnvelope<Event>>
 
     /**
      * Finds the last even of the specified type associated with the given tag.

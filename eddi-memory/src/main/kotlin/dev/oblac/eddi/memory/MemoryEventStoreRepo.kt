@@ -13,7 +13,7 @@ class MemoryEventStoreRepo : EventStoreRepo {
 
     override fun totalEventsStored(): Long = storedEvents.size.toLong()
 
-    override fun findLastEvent(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
+    override fun findLastEvents(fromIndex: Int): List<EventEnvelope<Event>> = storedEvents.subList(fromIndex, storedEvents.size)
 
     override fun findLastTaggedEvent(eventType: EventType, tag: Tag): EventEnvelope<Event>? {
         return storedEvents.lastOrNull {
