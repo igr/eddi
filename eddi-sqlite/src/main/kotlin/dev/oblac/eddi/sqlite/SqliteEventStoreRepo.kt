@@ -1,6 +1,7 @@
 package dev.oblac.eddi.sqlite
 
 import dev.oblac.eddi.*
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.exposed.sql.*
@@ -11,13 +12,6 @@ import kotlin.reflect.full.memberProperties
 
 /**
  * SQLite-based implementation of EventStoreRepo using Exposed ORM.
- * 
- * This implementation provides:
- * - Thread-safe operations using connection pooling and transactions
- * - Optimized queries for high-performance event retrieval
- * - JSON serialization for complex Event and Tag data
- * - Proper indexing strategy for fast lookups
- * - Connection management with automatic database initialization
  */
 class SqliteEventStoreRepo(
     private val databasePath: String = "event_store.db"
@@ -33,6 +27,10 @@ class SqliteEventStoreRepo(
             url = "jdbc:sqlite:$databasePath",
             driver = "org.sqlite.JDBC"
         )
+
+        runBlocking {
+            ensureInitialized()
+        }
         
         // Configure SQLite for optimal performance
         try {
@@ -49,21 +47,20 @@ class SqliteEventStoreRepo(
      * Ensures database schema is created.
      * Thread-safe initialization that runs only once.
      */
-    suspend fun ensureInitialized() {
-        if (!isInitialized) {
-            initMutex.withLock {
-                if (!isInitialized) {
-                    try {
-                        TransactionUtils.safeTransaction(database) {
-                            SchemaUtils.create(EventEnvelopeTable)
-                        }
-                        isInitialized = true
-                    } catch (e: Exception) {
-                        throw SqliteEventStoreException(
-                            "Failed to initialize database schema",
-                            e
-                        )
+    private suspend fun ensureInitialized() {
+        if (isInitialized) return
+        initMutex.withLock {
+            if (!isInitialized) {
+                try {
+                    TransactionUtils.safeTransaction(database) {
+                        SchemaUtils.create(EventEnvelopeTable)
                     }
+                    isInitialized = true
+                } catch (e: Exception) {
+                    throw SqliteEventStoreException(
+                        "Failed to initialize database schema",
+                        e
+                    )
                 }
             }
         }
@@ -96,14 +93,13 @@ class SqliteEventStoreRepo(
     }
     
     override fun totalEventsStored(): Long {
-        return 0
-//        return try {
-//            TransactionUtils.safeTransaction(database) {
-//                EventEnvelopeTable.selectAll().count()
-//            }
-//        } catch (e: Exception) {
-//            throw SqliteEventStoreException("Failed to count total events", e)
-//        }
+        return try {
+            TransactionUtils.safeTransaction(database) {
+                EventEnvelopeTable.selectAll().count()
+            }
+        } catch (e: Exception) {
+            throw SqliteEventStoreException("Failed to count total events", e)
+        }
     }
     
     override fun findLastEvent(fromIndex: Int): List<EventEnvelope<Event>> {
@@ -189,34 +185,7 @@ class SqliteEventStoreRepo(
                 .firstOrNull()
         }
     }
-    
-    /**
-     * Batch insert method for improved performance when storing multiple events.
-     */
-    suspend fun storeEventEnvelopes(envelopes: List<EventEnvelope<Event>>) {
-        if (envelopes.isEmpty()) return
-        
-        ensureInitialized()
-        
-        try {
-            TransactionUtils.safeTransaction(database) {
-                EventEnvelopeTable.batchInsert(envelopes) { envelope ->
-                    this[EventEnvelopeTable.sequence] = envelope.sequence
-                    this[EventEnvelopeTable.correlationId] = envelope.correlationId
-                    this[EventEnvelopeTable.eventType] = envelope.eventType.name
-                    this[EventEnvelopeTable.eventJson] = JsonUtils.serializeEvent(envelope.event)
-                    this[EventEnvelopeTable.historyJson] = JsonUtils.serializeHistory(envelope.history)
-                    this[EventEnvelopeTable.timestamp] = envelope.timestamp
-                }
-            }
-        } catch (e: Exception) {
-            throw SqliteEventStoreException(
-                "Failed to batch store ${envelopes.size} event envelopes",
-                e
-            )
-        }
-    }
-    
+
     /**
      * Converts a database row to an EventEnvelope.
      */
@@ -267,7 +236,7 @@ class SqliteEventStoreRepo(
     /**
      * Provides database statistics for monitoring and debugging.
      */
-    fun getDatabaseStats(): DatabaseStats {
+    fun calculateDatabaseStats(): DatabaseStats {
         return transaction(database) {
             val totalEvents = EventEnvelopeTable.selectAll().count()
             val oldestEvent = EventEnvelopeTable

@@ -1,11 +1,7 @@
 package dev.oblac.eddi.example
 
-import dev.oblac.eddi.*
-import dev.oblac.eddi.example.college.StudentTag
-import dev.oblac.eddi.example.college.CourseTag
-import dev.oblac.eddi.example.college.StudentRegistered
-import dev.oblac.eddi.example.college.Enrolled
-import dev.oblac.eddi.example.college.Graded
+import dev.oblac.eddi.Event
+import dev.oblac.eddi.example.college.*
 import dev.oblac.eddi.sqlite.SqliteEddiFactory
 import kotlinx.coroutines.runBlocking
 
@@ -84,7 +80,7 @@ fun main() = runBlocking {
         // Display database statistics
         println("\n📊 Database Statistics:")
         if (eventStore is dev.oblac.eddi.sqlite.SqliteEventStore) {
-            val stats = eventStore.getStats()
+            val stats = eventStore.stats()
             println("- Total Events: ${stats.totalEvents}")
             println("- Database Path: ${stats.databasePath}")
             println("- Oldest Event: ${stats.oldestEventTimestamp}")

@@ -12,17 +12,9 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * SQLite-based event store implementation.
- *
- * This implementation:
- * - Stores events persistently in SQLite database using Exposed ORM
- * - Maintains thread safety using coroutines and mutexes
- * - Provides ACID guarantees through database transactions
- * - Optimized for high-throughput append-only workloads
- * - Supports the outbox pattern through ordered sequence numbers
  */
 class SqliteEventStore(
     private val eventStoreRepo: SqliteEventStoreRepo,
-    databasePath: String = "event_store.db"
 ) : EventStore {
 
     private val storageMutex = Mutex()
@@ -31,11 +23,9 @@ class SqliteEventStore(
     internal val totalEventsStored = AtomicLong(0)
     
     init {
-        // Initialize sequence counter from existing database
         runBlocking {
             val existingCount = eventStoreRepo.totalEventsStored()
             totalEventsStored.set(existingCount)
-            eventStoreRepo.ensureInitialized()
         }
 
     }
@@ -71,43 +61,10 @@ class SqliteEventStore(
     }
     
     /**
-     * Batch store multiple events for improved performance.
-     * Useful for bulk operations or replay scenarios.
-     */
-    suspend fun <E : Event> storeEvents(correlationId: Long, events: List<E>): List<EventEnvelope<E>> {
-        if (events.isEmpty()) return emptyList()
-        
-        return storageMutex.withLock {
-            val envelopes = events.map { event ->
-                val tags = event.tags().associateWith { tag ->
-                    eventStoreRepo.findLastTaggedEvent(tag)?.sequence ?: 0L
-                }
-                
-                val globalSeq = totalEventsStored.incrementAndGet()
-                EventEnvelope(
-                    sequence = globalSeq,
-                    correlationId = correlationId,
-                    event = event,
-                    history = tags,
-                    timestamp = Instant.now()
-                ) as EventEnvelope<Event>
-            }
-            
-            // Batch insert for better performance
-            eventStoreRepo.storeEventEnvelopes(envelopes)
-            
-            println("Batch stored ${events.size} events in SQLite")
-            
-            @Suppress("UNCHECKED_CAST")
-            envelopes as List<EventEnvelope<E>>
-        }
-    }
-    
-    /**
      * Gets current statistics about the event store.
      */
-    suspend fun getStats(): DatabaseStats {
-        return eventStoreRepo.getDatabaseStats()
+    fun stats(): DatabaseStats {
+        return eventStoreRepo.calculateDatabaseStats()
     }
     
     /**

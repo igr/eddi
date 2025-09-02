@@ -17,8 +17,7 @@ import dev.oblac.eddi.Tag
 private interface EventMixIn
 
 /**
- * Utility object for handling JSON serialization using Jackson in the SQLite Event Store.
- * Configured to handle polymorphic Event types with Jackson's default typing.
+ * Utility for handling JSON serialization using Jackson in the SQLite Event Store.
  */
 object JsonUtils {
     val objectMapper: ObjectMapper = jacksonObjectMapper()
