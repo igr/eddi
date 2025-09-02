@@ -3,12 +3,13 @@ package dev.oblac.eddi.example.college
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventStoreRepo
 import dev.oblac.eddi.Service
-import dev.oblac.eddi.example.createMemoryEddie
+import dev.oblac.eddi.example.createMemoryPlusSqlite
 import dev.oblac.eddi.registerService
 
 
 fun main() {
-    val eddi = createMemoryEddie()
+    //val eddi = createMemoryEddie()
+    val eddi = createMemoryPlusSqlite()
 
     with(eddi.serviceRegistry) {
         registerService(::registerStudent)
