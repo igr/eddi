@@ -11,8 +11,8 @@ import java.sql.Timestamp
  */
 object InsertEventStatement {
     const val SQL = """
-        INSERT INTO event_envelopes (correlation_id, event_type, event_json, history_json, timestamp)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO event_envelopes (correlation_id, event_type, event_json, history_json, tags_json, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
     """
     
     operator fun invoke(connection: Connection, envelope: EventEnvelope<Event>) {
@@ -21,7 +21,8 @@ object InsertEventStatement {
             stmt.setString(2, envelope.eventType.name)
             stmt.setString(3, JsonUtils.serializeEvent(envelope.event))
             stmt.setString(4, JsonUtils.serializeHistory(envelope.history))
-            stmt.setTimestamp(5, Timestamp.from(envelope.timestamp))
+            stmt.setString(5, JsonUtils.serializeTags(envelope.tags))
+            stmt.setTimestamp(6, Timestamp.from(envelope.timestamp))
             stmt.executeUpdate()
         }
     }

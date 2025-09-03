@@ -2,31 +2,32 @@ package dev.oblac.eddi.sqlite.queries
 
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
+import dev.oblac.eddi.Tag
 import dev.oblac.eddi.sqlite.dataToEventEnvelope
 import dev.oblac.eddi.sqlite.mapToEventEnvelopeData
 import java.sql.Connection
 
 /**
- * SQL query object for selecting events from a specific index onwards.
+ * OPTIMIZE!!!!!!!!!!!!!!!!!!
  */
-object SelectEventsFromIndexQuery {
+object FindLastEventByTagDescQuery {
     const val SQL = """
         SELECT sequence, correlation_id, event_type, event_json, history_json, tags_json, timestamp
-        FROM event_envelopes 
-        WHERE sequence > ?
-        ORDER BY sequence ASC
+        FROM event_envelopes EE, json_each(EE.tags_json) AS T 
+        WHERE T.value=?
+        ORDER BY sequence DESC
+        LIMIT 1
     """
-    
-    operator fun invoke(connection: Connection, fromIndex: Int): List<EventEnvelope<Event>> {
+    operator fun invoke(connection: Connection, tag: Tag): EventEnvelope<Event>? {
         return connection.prepareStatement(SQL).use { stmt ->
-            stmt.setLong(1, fromIndex.toLong())
+            stmt.setString(1, tag.id)
             val rs = stmt.executeQuery()
-            val events = mutableListOf<EventEnvelope<Event>>()
-            while (rs.next()) {
+            if (rs.next()) {
                 val data = rs.mapToEventEnvelopeData()
-                events.add(dataToEventEnvelope(data))
+                dataToEventEnvelope(data)
+            } else {
+                null
             }
-            events
         }
     }
 }

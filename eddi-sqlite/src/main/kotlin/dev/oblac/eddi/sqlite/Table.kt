@@ -16,6 +16,7 @@ fun ResultSet.mapToEventEnvelopeData(): EventEnvelopeData {
         eventType = this.getString("event_type"),
         eventJson = this.getString("event_json"),
         historyJson = this.getString("history_json"),
+        tagsJson = this.getString("tags_json"),
         timestamp = this.getTimestamp("timestamp").toInstant()
     )
 }
@@ -32,6 +33,7 @@ fun dataToEventEnvelope(data: EventEnvelopeData): EventEnvelope<Event> {
             event = JsonUtils.deserializeEvent(data.eventJson),
             eventType = EventType(data.eventType),
             history = JsonUtils.deserializeHistory(data.historyJson),
+            tags = JsonUtils.deserializeTags(data.tagsJson),
             timestamp = data.timestamp
         )
     } catch (e: Exception) {
@@ -53,5 +55,6 @@ data class EventEnvelopeData(
     val eventType: String,
     val eventJson: String,
     val historyJson: String,
+    val tagsJson: String,
     val timestamp: Instant
 )

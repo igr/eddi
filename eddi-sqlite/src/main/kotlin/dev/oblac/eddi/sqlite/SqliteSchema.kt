@@ -12,6 +12,7 @@ object SqliteSchema {
             event_type VARCHAR(255) NOT NULL,
             event_json TEXT NOT NULL,
             history_json TEXT NOT NULL,
+            tags_json TEXT NOT NULL,
             timestamp DATETIME NOT NULL
         )
     """

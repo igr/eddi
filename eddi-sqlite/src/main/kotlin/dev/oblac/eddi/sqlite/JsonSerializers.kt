@@ -54,4 +54,19 @@ object JsonUtils {
     fun deserializeHistory(jsonString: String): Map<Tag, Long> {
         return objectMapper.readValue(jsonString, Map::class.java) as Map<Tag, Long>
     }
+    
+    /**
+     * Serializes a Set<Tag> to JSON string using Jackson.
+     */
+    fun serializeTags(tags: Set<Tag>): String {
+        return objectMapper.writeValueAsString(tags)
+    }
+    
+    /**
+     * Deserializes a Set<Tag> from JSON string using Jackson.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun deserializeTags(jsonString: String): Set<Tag> {
+        return objectMapper.readValue(jsonString, Set::class.java) as Set<Tag>
+    }
 }

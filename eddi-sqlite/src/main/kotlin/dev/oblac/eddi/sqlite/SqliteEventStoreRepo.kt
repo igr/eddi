@@ -6,8 +6,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.memberProperties
 
 /**
  * SQLite-based implementation of EventStoreRepo using JDBC.
@@ -108,11 +106,7 @@ class SqliteEventStoreRepo(
         return try {
             runBlocking {
                 database.transaction { connection ->
-                    val candidates = SelectEventsByTypeDescQuery(connection, eventType.name)
-                    // Filter by tag using reflection (same logic as MemoryEventStoreRepo)
-                    candidates.firstOrNull { envelope ->
-                        hasMatchingTag(envelope.event, tag)
-                    }
+                    FindLastEventByTypeAndTagDescQuery(connection, eventType.name, tag)
                 }
             }
         } catch (e: Exception) {
@@ -127,12 +121,7 @@ class SqliteEventStoreRepo(
         return try {
             runBlocking {
                 database.transaction { connection ->
-                    val candidates = SelectAllEventsDescQuery(connection)
-
-                    // Filter by tag using reflection
-                    candidates.firstOrNull { envelope ->
-                        hasMatchingTag(envelope.event, tag)
-                    }
+                    FindLastEventByTagDescQuery(connection, tag)
                 }
             }
         } catch (e: Exception) {
@@ -171,34 +160,6 @@ class SqliteEventStoreRepo(
                     }
                 }
             }
-        }
-    }
-
-
-    /**
-     * Checks if an event has a matching tag using reflection.
-     * This mirrors the logic from MemoryEventStoreRepo.
-     * todo REMOVE!
-     */
-    private fun hasMatchingTag(event: Event, tag: Tag): Boolean {
-        val tagClass = tag::class
-
-        // Find event property that is of the same type as the tag implementation
-        val eventProperties = event::class.memberProperties
-        val tagProperty = eventProperties.find { property ->
-            property.returnType.classifier == tagClass
-        }
-
-        if (tagProperty == null) {
-            return false
-        }
-
-        return try {
-            @Suppress("UNCHECKED_CAST")
-            val tagPropertyValue = (tagProperty as KProperty1<Any, Tag>).get(event)
-            tagPropertyValue == tag
-        } catch (e: Exception) {
-            false
         }
     }
 

@@ -52,6 +52,7 @@ data class EventEnvelope<E : Event>(
     val event: E,
     val eventType: EventType = EventType.of(event::class),
     val history: Map<Tag, Long>,
+    val tags: Set<Tag> = event.tags(),
     val timestamp: Instant = Instant.now(),
 )
 
