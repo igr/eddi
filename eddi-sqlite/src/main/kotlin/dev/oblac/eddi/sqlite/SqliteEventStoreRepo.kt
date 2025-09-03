@@ -267,12 +267,11 @@ class SqliteEventStoreRepo(
     }
     
     /**
-     * Closes the database connection.
+     * Closes the database connection pool.
      * Should be called during application shutdown.
      */
     fun close() {
-        // JDBC connections are closed automatically after each transaction
-        // No explicit close needed, but this method is provided for completeness
+        database.close()
     }
     
     /**

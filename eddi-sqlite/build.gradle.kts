@@ -10,6 +10,9 @@ dependencies {
     // SQLite JDBC driver (direct JDBC support, no Exposed)
     implementation(libs.sqlite.jdbc)
     
+    // HikariCP connection pool
+    implementation(libs.hikari)
+    
     // Jackson JSON serialization
     implementation(libs.jackson.core)
     implementation(libs.jackson.databind)

@@ -1,9 +1,10 @@
 package dev.oblac.eddi.sqlite
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.Connection
-import java.sql.DriverManager
 
 /**
  * Common database support using JDBC without the Exposed dependency.
@@ -12,15 +13,50 @@ import java.sql.DriverManager
 class JdbcDatabase(
     private val url: String,
     private val properties: Map<String, String> = emptyMap()
-) {
+) : AutoCloseable {
+
+    private val dataSource: HikariDataSource
+
+    init {
+        val config = HikariConfig().apply {
+            jdbcUrl = url
+            
+            // Apply custom properties
+            properties.forEach { (key, value) ->
+                dataSourceProperties.setProperty(key, value)
+            }
+            
+            // SQLite-specific optimizations
+            maximumPoolSize = 1 // SQLite only supports one writer at a time
+            minimumIdle = 1
+            maxLifetime = 300_000 // 5 minutes
+            idleTimeout = 60_000 // 1 minute
+            connectionTimeout = 30_000 // 30 seconds
+            leakDetectionThreshold = 60_000 // 1 minute
+            
+            // Connection pool name for monitoring
+            poolName = "SQLite-Pool"
+            
+            // Auto-commit should be false for transaction control
+            isAutoCommit = false
+        }
+        
+        dataSource = HikariDataSource(config)
+    }
 
     /**
-     * Returns a database connection with proper configuration.
+     * Returns a database connection from the connection pool.
      */
-    fun connection(): Connection {
-        val connection = DriverManager.getConnection(url, properties.toProperties())
-        connection.autoCommit = false // Use manual transaction control
-        return connection
+    fun connection(): Connection = dataSource.connection
+
+    /**
+     * Closes the connection pool and releases all resources.
+     * Should be called during application shutdown.
+     */
+    override fun close() {
+        if (!dataSource.isClosed) {
+            dataSource.close()
+        }
     }
 
     /**
@@ -100,11 +136,3 @@ class JdbcDatabase(
     }
 }
 
-/**
- * Helper extension to convert Map to Properties
- */
-private fun Map<String, String>.toProperties(): java.util.Properties {
-    val props = java.util.Properties()
-    this.forEach { (key, value) -> props.setProperty(key, value) }
-    return props
-}
