@@ -3,7 +3,6 @@ package dev.oblac.eddi.example.college
 import dev.oblac.eddi.Eddi
 import java.time.Instant
 
-
 // Projection data classes
 data class StudentProfile(
     val student: StudentTag,
@@ -65,7 +64,6 @@ fun createProjections(eddi: Eddi) {
             email = event.email,
             registeredAt = event.registeredAt
         )
-        println("Projected StudentRegistered to StudentProfile: ${studentProfiles[event.student]}")
     }
 
     eddi.projector.projectorForEvent(CoursePublished::class) { event ->
@@ -76,29 +74,24 @@ fun createProjections(eddi: Eddi) {
             credits = event.credits,
             publishAt = event.publishAt
         )
-        println("Projected CoursePublished to CourseInfo: ${courseCatalog[event.course]}")
     }
     eddi.projector.projectorForEvent(Enrolled::class) { event ->
         val records = enrollmentRecords.getOrPut(event.student) { mutableListOf() }
         records.add(EnrollmentRecord(course = event.course, enrolledAt = event.enrolledAt))
-        println("Projected Enrolled to EnrollmentRecord: ${records.last()}")
     }
     eddi.projector.projectorForEvent(TuitionPaid::class) { event ->
         val account = financialAccounts.getOrPut(event.student) { FinancialAccount(student = event.student) }
         account.totalPaid += event.amount
         account.payments.add(PaymentRecord(amount = event.amount, paidAt = event.paidAt, semester = event.semester))
-        println("Projected TuitionPaid to FinancialAccount: ${account}")
     }
     eddi.projector.projectorForEvent(Graded::class) { event ->
         val transcript = academicTranscripts.getOrPut(event.student) { mutableListOf() }
         transcript.add(TranscriptEntry(course = event.course, grade = event.grade, gradedAt = event.gradedAt))
-        println("Projected Graded to TranscriptEntry: ${transcript.last()}")
     }
     eddi.projector.projectorForEvent(StudentDeregistered::class) { event ->
         studentProfiles[event.student]?.let { profile ->
             profile.deregisteredAt = event.deregisteredAt
             profile.deregistrationReason = event.reason
-            println("Projected StudentDeregistered to StudentProfile: $profile")
         }
     }
 }

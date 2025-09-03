@@ -40,11 +40,10 @@ class CommandStoreOutbox(
      */
     fun start() {
         if (!isProcessing.compareAndSet(false, true)) {
-            println("CommandStoreOutbox is already processing")
             return
         }
         
-        println("Starting CommandStoreOutbox processing...")
+        //println("Starting CommandStoreOutbox processing...")
         
         processingJob = scope.launch {
             try {
@@ -56,7 +55,7 @@ class CommandStoreOutbox(
                 println("Error in outbox processing: ${e.message}")
                 // Continue processing unless cancelled
                 if (e !is CancellationException) {
-                    println("Restarting outbox processing after error...")
+                    //println("Restarting outbox processing after error...")
                     delay(1000) // Wait before restart
                     start() // Restart processing
                 }
@@ -128,17 +127,17 @@ class CommandStoreOutbox(
             }
         }
         
-        if (processedCount > 0) {
-            println("Processed $processedCount commands from outbox (index-based)")
-        }
+//        if (processedCount > 0) {
+//            println("Processed $processedCount commands from outbox (index-based)")
+//        }
     }
 
     fun publishCommand(commandEnvelope: CommandEnvelope<Command>) {
         try {
             commandBus.publishCommand(commandEnvelope)
-            println("Command published successfully: $commandEnvelope")
+            //println("Command published successfully: $commandEnvelope")
         } catch (e: Exception) {
-            println("Failed to publish command: $commandEnvelope, error: ${e.message}")
+            //println("Failed to publish command: $commandEnvelope, error: ${e.message}")
             // In a real implementation, you might want to retry or store failed commands
             throw e
         }

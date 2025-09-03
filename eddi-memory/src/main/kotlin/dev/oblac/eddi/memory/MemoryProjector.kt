@@ -11,7 +11,6 @@ class MemoryProjector(val eventBus: EventBus) : Projector {
     override fun <E : Event, P> projectorForEvent(eventType: KClass<E>, handler: (E) -> P) {
         eventBus.registerEventHandler(eventType, { event ->
             val projection = handler(event.event as E)
-            println("Event ${event.event} to projection $projection")
             triggerProjection(event.correlationId, projection)
             arrayOf()
         })

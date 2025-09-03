@@ -49,7 +49,7 @@ class MemoryCommandStore(
             }
             
             // Command is now available for outbox processing via index comparison
-            println("Command stored for processing: $envelope")
+            //println("Command stored for processing: $envelope")
             
             envelope
         }

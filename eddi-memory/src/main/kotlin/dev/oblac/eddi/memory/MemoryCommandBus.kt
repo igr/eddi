@@ -28,11 +28,11 @@ class MemoryCommandBus : CommandBus {
 
     override fun publishCommand(command: CommandEnvelope<Command>) {
         commandChannel.trySend(command)
-        println("Published command: $command")
+        //println("Published command: $command")
     }
 
     override fun handleCommand(commandEnvelope: CommandEnvelope<Command>) {
-        println("Handling command: $commandEnvelope")
+        //println("Handling command: $commandEnvelope")
         handlers.forEach { handler ->
             handler(commandEnvelope)
         }

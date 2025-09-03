@@ -34,11 +34,11 @@ class MemoryEventBus(
 
     override fun publishEvent(event: EventEnvelope<Event>) {
         eventChannel.trySend(event)
-        println("Published event: $event")
+        //println("Published event: $event")
     }
 
     override fun handleEvent(eventEnvelope: EventEnvelope<Event>) {
-        println("Handling event: $eventEnvelope")
+        //println("Handling event: $eventEnvelope")
         val eventClass = eventEnvelope.event::class
         val handler = handlers[eventClass]
         if (handler != null) {

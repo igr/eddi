@@ -49,7 +49,7 @@ class MemoryEventStore(
             }
 
             // Event is now available for outbox processing via index comparison
-            println("Event stored for processing: ${event::class.simpleName}")
+            //println("Event stored for processing: ${event::class.simpleName}")
 
             envelope
         }

@@ -120,15 +120,15 @@ class MemoryEventStoreOutbox(
             }
         }
         
-        if (processedCount > 0) {
-            println("Processed $processedCount events from outbox (index-based)")
-        }
+//        if (processedCount > 0) {
+//            println("Processed $processedCount events from outbox (index-based)")
+//        }
     }
 
     fun publishEvent(eventEnvelope: EventEnvelope<Event>) {
         try {
             eventBus.publishEvent(eventEnvelope)
-            println("Event published successfully: $eventEnvelope")
+            //println("Event published successfully: $eventEnvelope")
         } catch (e: Exception) {
             println("Failed to publish event: $eventEnvelope, error: ${e.message}")
             // In a real implementation, you might want to retry or store failed events

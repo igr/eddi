@@ -54,7 +54,7 @@ class SqliteEventStore(
             }
 
             // Event is now available for outbox processing via sequence comparison
-            println("Event stored in SQLite: ${event::class.simpleName} (seq: ${envelope.sequence})")
+            //println("Event stored in SQLite: ${event::class.simpleName} (seq: ${envelope.sequence})")
 
             envelope
         }
