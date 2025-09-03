@@ -4,35 +4,35 @@ import dev.oblac.eddi.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import java.sql.Timestamp
 import java.time.Instant
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
 /**
- * SQLite-based implementation of EventStoreRepo using Exposed ORM.
+ * SQLite-based implementation of EventStoreRepo using JDBC.
  */
 class SqliteEventStoreRepo(
     private val databasePath: String = "event_store.db"
 ) : EventStoreRepo {
     
-    private val database: Database
+    private val database: JdbcDatabase
     private val initMutex = Mutex()
     private var isInitialized = false
     
     init {
         // Initialize SQLite database connection
-        database = Database.connect(
-            url = "jdbc:sqlite:$databasePath",
-            driver = "org.sqlite.JDBC"
+        database = JdbcDatabase(
+            url = "jdbc:sqlite:$databasePath"
         )
+
+        // Configure SQLite for performance
+        //configureSqliteForPerformance()
 
         runBlocking {
             ensureInitialized()
         }
 
-        //configureSqliteForPerformance(database)
     }
     
     /**
@@ -44,9 +44,7 @@ class SqliteEventStoreRepo(
         initMutex.withLock {
             if (!isInitialized) {
                 try {
-                    TransactionUtils.safeTransaction(database) {
-                        SchemaUtils.create(EventEnvelopeTable)
-                    }
+                    SqliteSchema.createSchema(database)
                     isInitialized = true
                 } catch (e: Exception) {
                     throw SqliteEventStoreException(
@@ -63,17 +61,15 @@ class SqliteEventStoreRepo(
      * Used by EventStore implementations.
      */
     suspend fun storeEventEnvelope(envelope: EventEnvelope<Event>) {
-        ensureInitialized()
-        
         try {
-            TransactionUtils.safeTransaction(database) {
-                EventEnvelopeTable.insert {
-                    it[sequence] = envelope.sequence
-                    it[correlationId] = envelope.correlationId
-                    it[eventType] = envelope.eventType.name
-                    it[eventJson] = JsonUtils.serializeEvent(envelope.event)
-                    it[historyJson] = JsonUtils.serializeHistory(envelope.history)
-                    it[timestamp] = envelope.timestamp
+            database.transaction { connection ->
+                connection.prepareStatement(SqliteQueries.INSERT_EVENT).use { stmt ->
+                    stmt.setLong(1, envelope.correlationId)
+                    stmt.setString(2, envelope.eventType.name)
+                    stmt.setString(3, JsonUtils.serializeEvent(envelope.event))
+                    stmt.setString(4, JsonUtils.serializeHistory(envelope.history))
+                    stmt.setTimestamp(5, Timestamp.from(envelope.timestamp))
+                    stmt.executeUpdate()
                 }
             }
         } catch (e: Exception) {
@@ -86,8 +82,14 @@ class SqliteEventStoreRepo(
     
     override fun totalEventsStored(): Long {
         return try {
-            TransactionUtils.safeTransaction(database) {
-                EventEnvelopeTable.selectAll().count()
+            runBlocking {
+                database.transaction { connection ->
+                    connection.prepareStatement(SqliteQueries.COUNT_ALL_EVENTS).use { stmt ->
+                        val rs = stmt.executeQuery()
+                        rs.next()
+                        rs.getLong(1)
+                    }
+                }
             }
         } catch (e: Exception) {
             throw SqliteEventStoreException("Failed to count total events", e)
@@ -96,12 +98,19 @@ class SqliteEventStoreRepo(
     
     override fun findLastEvents(fromIndex: Int): List<EventEnvelope<Event>> {
         return try {
-            TransactionUtils.safeTransaction(database) {
-                EventEnvelopeTable
-                    .selectAll()
-                    .where { EventEnvelopeTable.sequence greater fromIndex.toLong() }
-                    .orderBy(EventEnvelopeTable.sequence, SortOrder.ASC)
-                    .map { row -> rowToEventEnvelope(row) }
+            runBlocking {
+                database.transaction { connection ->
+                    connection.prepareStatement(SqliteQueries.SELECT_EVENTS_FROM_INDEX).use { stmt ->
+                        stmt.setLong(1, fromIndex.toLong())
+                        val rs = stmt.executeQuery()
+                        val events = mutableListOf<EventEnvelope<Event>>()
+                        while (rs.next()) {
+                            val data = rs.mapToEventEnvelopeData()
+                            events.add(dataToEventEnvelope(data))
+                        }
+                        events
+                    }
+                }
             }
         } catch (e: Exception) {
             throw SqliteEventStoreException(
@@ -113,17 +122,22 @@ class SqliteEventStoreRepo(
     
     override fun findLastTaggedEvent(eventType: EventType, tag: Tag): EventEnvelope<Event>? {
         return try {
-            TransactionUtils.safeTransaction(database) {
-                // First, find all events of the specified type
-                val candidates = EventEnvelopeTable
-                    .selectAll()
-                    .where { EventEnvelopeTable.eventType eq eventType.name }
-                    .orderBy(EventEnvelopeTable.sequence, SortOrder.DESC)
-                    .map { row -> rowToEventEnvelope(row) }
-                
-                // Then filter by tag using reflection (same logic as MemoryEventStoreRepo)
-                candidates.firstOrNull { envelope ->
-                    hasMatchingTag(envelope.event, tag)
+            runBlocking {
+                database.transaction { connection ->
+                    connection.prepareStatement(SqliteQueries.SELECT_EVENTS_BY_TYPE_DESC).use { stmt ->
+                        stmt.setString(1, eventType.name)
+                        val rs = stmt.executeQuery()
+                        val candidates = mutableListOf<EventEnvelope<Event>>()
+                        while (rs.next()) {
+                            val data = rs.mapToEventEnvelopeData()
+                            candidates.add(dataToEventEnvelope(data))
+                        }
+                        
+                        // Filter by tag using reflection (same logic as MemoryEventStoreRepo)
+                        candidates.firstOrNull { envelope ->
+                            hasMatchingTag(envelope.event, tag)
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -136,16 +150,21 @@ class SqliteEventStoreRepo(
     
     override fun findLastTaggedEvent(tag: Tag): EventEnvelope<Event>? {
         return try {
-            TransactionUtils.safeTransaction(database) {
-                // Get all events ordered by sequence descending for efficient search
-                val candidates = EventEnvelopeTable
-                    .selectAll()
-                    .orderBy(EventEnvelopeTable.sequence, SortOrder.DESC)
-                    .map { row -> rowToEventEnvelope(row) }
-                
-                // Filter by tag using reflection
-                candidates.firstOrNull { envelope ->
-                    hasMatchingTag(envelope.event, tag)
+            runBlocking {
+                database.transaction { connection ->
+                    connection.prepareStatement(SqliteQueries.SELECT_ALL_EVENTS_DESC).use { stmt ->
+                        val rs = stmt.executeQuery()
+                        val candidates = mutableListOf<EventEnvelope<Event>>()
+                        while (rs.next()) {
+                            val data = rs.mapToEventEnvelopeData()
+                            candidates.add(dataToEventEnvelope(data))
+                        }
+                        
+                        // Filter by tag using reflection
+                        candidates.firstOrNull { envelope ->
+                            hasMatchingTag(envelope.event, tag)
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -162,43 +181,32 @@ class SqliteEventStoreRepo(
      * if the Event structure allows for more direct SQL querying.
      */
     fun findLastTaggedEventOptimized(eventType: EventType, tagId: String): EventEnvelope<Event>? {
-        return transaction(database) {
-            // Use LIKE query to search in JSON for better performance
-            // This assumes the tag ID appears in the event JSON
-            EventEnvelopeTable
-                .selectAll()
-                .where { 
-                    (EventEnvelopeTable.eventType eq eventType.name) and
-                    (EventEnvelopeTable.eventJson like "%\"$tagId\"%")
+        return runBlocking {
+            database.transaction { connection ->
+                val query = """
+                    SELECT sequence, correlation_id, event_type, event_json, history_json, timestamp
+                    FROM event_envelopes 
+                    WHERE event_type = ? AND event_json LIKE ?
+                    ORDER BY sequence DESC
+                    LIMIT 1
+                """
+                
+                connection.prepareStatement(query).use { stmt ->
+                    stmt.setString(1, eventType.name)
+                    stmt.setString(2, "%\"$tagId\"%")
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) {
+                        val data = rs.mapToEventEnvelopeData()
+                        dataToEventEnvelope(data)
+                    } else {
+                        null
+                    }
                 }
-                .orderBy(EventEnvelopeTable.sequence, SortOrder.DESC)
-                .limit(1)
-                .map { row -> rowToEventEnvelope(row) }
-                .firstOrNull()
+            }
         }
     }
 
-    /**
-     * Converts a database row to an EventEnvelope.
-     */
-    private fun rowToEventEnvelope(row: ResultRow): EventEnvelope<Event> {
-        return try {
-            EventEnvelope(
-                sequence = row[EventEnvelopeTable.sequence],
-                correlationId = row[EventEnvelopeTable.correlationId],
-                event = JsonUtils.deserializeEvent(row[EventEnvelopeTable.eventJson]),
-                eventType = EventType(row[EventEnvelopeTable.eventType]),
-                history = JsonUtils.deserializeHistory(row[EventEnvelopeTable.historyJson]),
-                timestamp = row[EventEnvelopeTable.timestamp]
-            )
-        } catch (e: Exception) {
-            throw SqliteEventStoreException(
-                "Failed to deserialize event envelope from database row. Event JSON: ${row[EventEnvelopeTable.eventJson]}",
-                e
-            )
-        }
-    }
-    
+
     /**
      * Checks if an event has a matching tag using reflection.
      * This mirrors the logic from MemoryEventStoreRepo.
@@ -230,27 +238,31 @@ class SqliteEventStoreRepo(
      * Provides database statistics for monitoring and debugging.
      */
     fun calculateDatabaseStats(): DatabaseStats {
-        return transaction(database) {
-            val totalEvents = EventEnvelopeTable.selectAll().count()
-            val oldestEvent = EventEnvelopeTable
-                .selectAll()
-                .orderBy(EventEnvelopeTable.timestamp, SortOrder.ASC)
-                .limit(1)
-                .map { it[EventEnvelopeTable.timestamp] }
-                .firstOrNull()
-            val newestEvent = EventEnvelopeTable
-                .selectAll()
-                .orderBy(EventEnvelopeTable.timestamp, SortOrder.DESC)
-                .limit(1)
-                .map { it[EventEnvelopeTable.timestamp] }
-                .firstOrNull()
+        return runBlocking {
+            database.transaction { connection ->
+                val totalEvents = connection.prepareStatement(SqliteQueries.COUNT_ALL_EVENTS).use { stmt ->
+                    val rs = stmt.executeQuery()
+                    rs.next()
+                    rs.getLong(1)
+                }
                 
-            DatabaseStats(
-                totalEvents = totalEvents,
-                oldestEventTimestamp = oldestEvent,
-                newestEventTimestamp = newestEvent,
-                databasePath = databasePath
-            )
+                val oldestEvent = connection.prepareStatement(SqliteQueries.SELECT_OLDEST_EVENT).use { stmt ->
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getTimestamp(1).toInstant() else null
+                }
+                
+                val newestEvent = connection.prepareStatement(SqliteQueries.SELECT_NEWEST_EVENT).use { stmt ->
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getTimestamp(1).toInstant() else null
+                }
+                
+                DatabaseStats(
+                    totalEvents = totalEvents,
+                    oldestEventTimestamp = oldestEvent,
+                    newestEventTimestamp = newestEvent,
+                    databasePath = databasePath
+                )
+            }
         }
     }
     
@@ -259,8 +271,28 @@ class SqliteEventStoreRepo(
      * Should be called during application shutdown.
      */
     fun close() {
-        // Exposed automatically manages connection pooling and closing
+        // JDBC connections are closed automatically after each transaction
         // No explicit close needed, but this method is provided for completeness
+    }
+    
+    /**
+     * Configures SQLite for performance without using Exposed.
+     */
+    private fun configureSqliteForPerformance() {
+        val commands = listOf(
+            "PRAGMA journal_mode=WAL",
+            "PRAGMA cache_size=10000",
+            "PRAGMA foreign_keys=OFF",
+            "PRAGMA temp_store=MEMORY",
+            "PRAGMA optimize",
+            "PRAGMA busy_timeout=30000", // 30 seconds
+            "PRAGMA mmap_size=268435456" // 256MB
+        )
+        commands.forEach {
+            println("Executing command: $it")
+            database.connection().createStatement().executeQuery(it).close()
+        }
+
     }
 }
 

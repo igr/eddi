@@ -1,6 +1,6 @@
 # Eddi SQLite Module
 
-The `eddi-sqlite` module provides SQLite-based implementations of Eddi's event storage interfaces using the Exposed Kotlin ORM library. This module is designed for high-performance, persistent event storage with ACID guarantees.
+The `eddi-sqlite` module provides SQLite-based implementations of Eddi's event storage interfaces using direct JDBC connections. This module is designed for high-performance, persistent event storage with ACID guarantees and minimal dependencies.
 
 ## Features
 
@@ -15,9 +15,8 @@ The `eddi-sqlite` module provides SQLite-based implementations of Eddi's event s
 ## Dependencies
 
 The module uses the following key dependencies:
-- **Exposed ORM**: For database operations and schema management
-- **SQLite JDBC**: SQLite database driver
-- **Kotlinx Serialization**: For JSON serialization of complex objects
+- **SQLite JDBC**: SQLite database driver for direct database access
+- **Jackson**: For JSON serialization of complex objects
 - **Kotlinx Coroutines**: For async operations and thread safety
 
 ## Quick Start
@@ -106,11 +105,11 @@ if (eventStore is SqliteEventStore) {
 ### Custom Database Configuration
 
 The module automatically configures SQLite for optimal performance:
-- **WAL Mode**: Enables better concurrent access
 - **Synchronous=NORMAL**: Balanced performance and safety
 - **Cache Size**: 10,000 pages for better memory usage
 - **Memory-Mapped I/O**: 256MB for faster reads
 - **Busy Timeout**: 30 seconds for handling locks
+- **Foreign Keys**: Disabled for better performance
 
 ## Error Handling
 
@@ -124,15 +123,15 @@ The module includes comprehensive error handling:
 ## Performance Considerations
 
 ### Write Performance
-- Uses batch insert operations for multiple events
-- Append-only table design eliminates update overhead  
-- WAL mode allows concurrent readers during writes
-- Prepared statements for consistent performance
+- Uses prepared statements for consistent performance
+- Append-only table design eliminates update overhead
+- Direct JDBC operations with minimal overhead
+- Transaction-based batch operations
 
 ### Read Performance
 - Strategic indexes on commonly queried columns
 - Memory-mapped I/O for large databases
-- Connection pooling managed by Exposed
+- Efficient JDBC prepared statements
 - Optimized query patterns for tag-based lookups
 
 ### Storage
@@ -144,7 +143,7 @@ The module includes comprehensive error handling:
 
 All operations are thread-safe through:
 - Kotlin coroutines with proper dispatchers
-- Database connection pooling via Exposed
+- Connection management with automatic cleanup
 - Mutex protection for critical initialization sections
 - ACID guarantees from SQLite transactions
 
