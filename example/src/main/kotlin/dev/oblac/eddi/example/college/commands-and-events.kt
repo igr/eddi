@@ -46,8 +46,8 @@ value class EnrolledId(override val id: String) : Tag
 
 data class Enrolled(
     val id: EnrolledId,
-    val tuitionPaidId: TuitionPaidId,
-    val courseId: CoursePublishedId,
+    val tuitionPaid: TuitionPaidId,
+    val course: CoursePublishedId,
     val enrolledAt: Instant = Instant.now()
 ) : Event
 
@@ -68,7 +68,7 @@ value class StudentDeregisteredId(override val id: String) : Tag
 // Student departure event - depends on StudentRegistered
 data class StudentDeregistered(
     val id: StudentDeregisteredId,
-    val studentRegistered: StudentRegistered,
+    val student: StudentRegisteredId,
     val deregisteredAt: Instant = Instant.now(),
     val reason: String? = null
 ) : Event

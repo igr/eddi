@@ -60,8 +60,8 @@ data class Eddi(
     val commandBus: CommandBus,
     val commandStore: CommandStore,
     val eventBus: EventBus,
-    val evetStore: EventStore,
-    val evetStoreRepo: EventStoreRepo,
+    val eventStore: EventStore,
+    val eventStoreRepo: EventStoreRepo,
     val eventStoreOutbox: EventStoreOutbox,
     val serviceRegistry: ServiceRegistry,
     val projector: Projector

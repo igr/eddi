@@ -1,11 +1,8 @@
 package dev.oblac.eddi.example.college
 
-import dev.oblac.eddi.Event
-import dev.oblac.eddi.EventStoreRepo
-import dev.oblac.eddi.Service
+import dev.oblac.eddi.*
 import dev.oblac.eddi.example.createMemoryPlusSqlite
-import dev.oblac.eddi.registerService
-
+import java.util.*
 
 fun main() {
     //val eddi = createMemoryEddie()
@@ -14,7 +11,7 @@ fun main() {
     with(eddi.serviceRegistry) {
         registerService(::registerStudent)
         registerService(::payTuition)
-        registerService(EnrollInCourseService(eddi.evetStoreRepo))
+        registerService(EnrollInCourseService(eddi.eventStoreRepo))
         registerService(::publishCourse)
         registerService(::gradeStudent)
         registerService(::deregisterStudent)
@@ -24,14 +21,41 @@ fun main() {
 
     // USAGE
 
-    with(eddi.commandStore) {
-        val student = StudentTag("S001")
-        val course = CourseTag("CS101")
-        storeCommand(RegisterStudent(student, "John", "Doe", "john.doe@college.edu"))
-        storeCommand(PublishCourse(course, "Introduction to Computer Science", "Dr. Smith", 3))
-        storeCommand(PayTuition(student, 1500.0, "Fall 2024"))
-        storeCommand(EnrollInCourse(student, course))
-        storeCommand(GradeStudent(student, course, "A"))
+    eddi.eventBus.registerEventHandler(StudentRegistered::class) { ee: EventEnvelope<StudentRegistered> ->
+        val studentRegistered = ee.event.id
+        eddi.commandStore.storeCommand(PayTuition(studentRegistered, 1500.0, "Fall 2025"))
+        emptyArray()
+    }
+
+    var coursePublishedId = CoursePublishedId("COURSE-UNKNOWN")
+    eddi.eventBus.registerEventHandler(CoursePublished::class) { ee: EventEnvelope<CoursePublished> ->
+        // we only have one course in this simple example
+        coursePublishedId = ee.event.id
+        emptyArray()
+    }
+
+    eddi.eventBus.registerEventHandler(TuitionPaid::class) { ee: EventEnvelope<TuitionPaid> ->
+        val tuitionPaid = ee.event.id
+        // find the course we published earlier
+        // ⚠️ ISSUE: there is NO guarantee that the course was published before the tuition was paid!!
+        val ee = eddi.eventStoreRepo.findLastTaggedEvent(Event.type<CoursePublished>(), coursePublishedId)
+            ?: throw IllegalStateException("Course $coursePublishedId is not published")
+        val coursePublished = ee.event as CoursePublished   // TODO remove cast
+
+        eddi.commandStore.storeCommand(EnrollInCourse(tuitionPaid, coursePublished.id))
+        emptyArray()
+    }
+
+    eddi.eventBus.registerEventHandler(Enrolled::class) { ee: EventEnvelope<Enrolled> ->
+        val enrolled = ee.event.id
+        eddi.commandStore.storeCommand(GradeStudent(enrolled, "A"))
+        emptyArray()
+    }
+
+    val total = 1//_000_0000
+    repeat(total) {
+        eddi.commandStore.storeCommand(RegisterStudent("John${it + 1}", "Doe", "john.doe@college.edu"))
+        eddi.commandStore.storeCommand(PublishCourse("Introduction to Computer Science", "Dr. Smith", 3))
     }
 
     println("College system initialized with sample commands")
@@ -39,10 +63,10 @@ fun main() {
 }
 
 fun registerStudent(command: RegisterStudent): Array<StudentRegistered> {
-    println("🔥 Registering student: ${command.firstName} ${command.lastName}")
+    println("${System.currentTimeMillis()} 🔥 Registering student: ${command.firstName} ${command.lastName}")
     return arrayOf(
         StudentRegistered(
-            student = command.student,
+            id = StudentRegisteredId("STU-${UUID.randomUUID()}"),
             firstName = command.firstName,
             lastName = command.lastName,
             email = command.email
@@ -50,43 +74,11 @@ fun registerStudent(command: RegisterStudent): Array<StudentRegistered> {
     )
 }
 
-fun payTuition(command: PayTuition): Array<TuitionPaid> {
-    println("🔥 Processing tuition payment for student: ${command.student}")
-    return arrayOf(
-        TuitionPaid(
-            student = command.student,
-            amount = command.amount,
-            semester = command.semester
-        )
-    )
-}
-
-class EnrollInCourseService(val evetStore: EventStoreRepo) : Service<EnrollInCourse, Enrolled> {
-    override fun invoke(command: EnrollInCourse): Array<Enrolled> {
-        // 1) check if the student is registered
-        evetStore.findLastTaggedEvent(Event.type<StudentRegistered>(), command.student)
-            ?: throw IllegalStateException("Student ${command.student} is not registered")    // dont throw exception!
-
-        // 2) check the course is published
-        evetStore.findLastTaggedEvent(Event.type<CoursePublished>(), command.course)
-            ?: throw IllegalStateException("Course ${command.course} is not published")
-
-        println("🔥 Enrolling student ${command.student} in course ${command.course}")
-
-        return arrayOf(
-            Enrolled(
-                student = command.student,
-                course = command.course
-            )
-        )
-    }
-}
-
 fun publishCourse(command: PublishCourse): Array<CoursePublished> {
-    println("🔥 Publishing course: ${command.courseName}")
+    println("${System.currentTimeMillis()} 🔥 Publishing course: ${command.courseName}")
     return arrayOf(
         CoursePublished(
-            course = command.course,
+            id = CoursePublishedId("COURSE-${UUID.randomUUID()}"),
             courseName = command.courseName,
             instructor = command.instructor,
             credits = command.credits
@@ -94,21 +86,52 @@ fun publishCourse(command: PublishCourse): Array<CoursePublished> {
     )
 }
 
+
+fun payTuition(command: PayTuition): Array<TuitionPaid> {
+    println("${System.currentTimeMillis()} 🔥 Processing tuition payment for student: ${command.student}")
+    return arrayOf(
+        TuitionPaid(
+            id = TuitionPaidId("PAY-${UUID.randomUUID()}"),
+            student = command.student,
+            amount = command.amount,
+            semester = command.semester
+        )
+    )
+}
+
+class EnrollInCourseService(val eventStore: EventStoreRepo) : Service<EnrollInCourse, Enrolled> {
+    override fun invoke(command: EnrollInCourse): Array<Enrolled> {
+        val tuitionPaid = command.tuitionPaid
+        val course = command.course
+
+        println("${System.currentTimeMillis()} 🔥 Enrolling student $tuitionPaid in course $course")
+
+        return arrayOf(
+            Enrolled(
+                id = EnrolledId("ENR-${UUID.randomUUID()}"),
+                tuitionPaid = tuitionPaid,
+                course = course
+            )
+        )
+    }
+}
+
 fun gradeStudent(command: GradeStudent): Array<Graded> {
-    println("🔥 Grading ${command.student} in ${command.course}: ${command.grade}")
+    println("${System.currentTimeMillis()} 🔥 Grading ${command.grade}")
     return arrayOf(
         Graded(
-            student = command.student,
-            course = command.course,
+            id = GradedId("GRD-${UUID.randomUUID()}"),
+            enrolledId = command.enrolled,
             grade = command.grade
         )
     )
 }
 
 fun deregisterStudent(command: DeregisterStudent): Array<StudentDeregistered> {
-    println("🔥 Processing student quit: ${command.student}")
+    println("${System.currentTimeMillis()} 🔥 Processing student quit: ${command.student}")
     return arrayOf(
         StudentDeregistered(
+            id = StudentDeregisteredId("STU-${UUID.randomUUID()}"),
             student = command.student,
             reason = command.reason
         )
