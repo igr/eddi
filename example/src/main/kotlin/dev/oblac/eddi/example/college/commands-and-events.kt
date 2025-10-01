@@ -6,93 +6,104 @@ import dev.oblac.eddi.Tag
 import java.time.Instant
 
 @JvmInline
-value class StudentTag(override val id: String) : Tag
+value class StudentRegisteredId(override val id: String) : Tag
 
 // Root event - foundational event for student lifecycle
 data class StudentRegistered(
-    val student: StudentTag,
+    val id: StudentRegisteredId,
     val firstName: String,
     val lastName: String,
     val email: String,
     val registeredAt: Instant = Instant.now()
 ) : Event
 
-// Payment event - depends on StudentRegistered
+@JvmInline
+value class TuitionPaidId(override val id: String) : Tag
+
+// Payment event
 data class TuitionPaid(
-    val student: StudentTag,
+    val id: TuitionPaidId,
+    val student: StudentRegisteredId,
     val amount: Double,
     val paidAt: Instant = Instant.now(),
     val semester: String
 ) : Event
 
-// Enrollment event - depends on StudentRegistered
-data class Enrolled(
-    val student: StudentTag,
-    val course: CourseTag,
-    val enrolledAt: Instant = Instant.now()
-) : Event
-
 @JvmInline
-value class CourseTag(override val id: String) : Tag
+value class CoursePublishedId(override val id: String) : Tag
 
-// Course publishing event - independent foundational event
+// Course publishing event
 data class CoursePublished(
-    val course: CourseTag,
+    val id: CoursePublishedId,
     val courseName: String,
     val instructor: String,
     val credits: Int,
     val publishAt: Instant = Instant.now()
 ) : Event
 
+@JvmInline
+value class EnrolledId(override val id: String) : Tag
+
+data class Enrolled(
+    val id: EnrolledId,
+    val tuitionPaidId: TuitionPaidId,
+    val courseId: CoursePublishedId,
+    val enrolledAt: Instant = Instant.now()
+) : Event
+
+@JvmInline
+value class GradedId(override val id: String) : Tag
+
 // Grading event - depends on both Enrolled and CoursePublished
 data class Graded(
-    val student: StudentTag,
-    val course: CourseTag,
+    val id: GradedId,
+    val enrolledId: EnrolledId,
     val grade: String, // A, B, C, D, F
     val gradedAt: Instant = Instant.now()
 ) : Event
 
+@JvmInline
+value class StudentDeregisteredId(override val id: String) : Tag
+
 // Student departure event - depends on StudentRegistered
 data class StudentDeregistered(
-    val student: StudentTag,
+    val id: StudentDeregisteredId,
+    val studentRegistered: StudentRegistered,
     val deregisteredAt: Instant = Instant.now(),
     val reason: String? = null
 ) : Event
 
+/** Corresponding Commands **/
 
-// Corresponding Commands
 data class RegisterStudent(
-    val student: StudentTag,
     val firstName: String,
     val lastName: String,
     val email: String
 ) : Command
 
 data class PayTuition(
-    val student: StudentTag,
+    val student: StudentRegisteredId,
     val amount: Double,
     val semester: String
 ) : Command
 
 data class EnrollInCourse(
-    val student: StudentTag,
-    val course: CourseTag
+    val tuitionPaid: TuitionPaidId,
+    val course: CoursePublishedId,
 ) : Command
 
 data class PublishCourse(
-    val course: CourseTag,
     val courseName: String,
     val instructor: String,
     val credits: Int
 ) : Command
 
 data class GradeStudent(
-    val student: StudentTag,
-    val course: CourseTag,
+    val enrolled: EnrolledId,
     val grade: String
 ) : Command
 
 data class DeregisterStudent(
-    val student: StudentTag,
+    val student: StudentRegisteredId,
     val reason: String? = null
 ) : Command
