@@ -5,6 +5,8 @@ import dev.oblac.eddi.Event
 import dev.oblac.eddi.Tag
 import java.time.Instant
 
+sealed interface AppEvent : Event
+
 @JvmInline
 value class StudentRegisteredId(override val id: String) : Tag
 
@@ -15,7 +17,7 @@ data class StudentRegistered(
     val lastName: String,
     val email: String,
     val registeredAt: Instant = Instant.now()
-) : Event
+) : AppEvent
 
 @JvmInline
 value class TuitionPaidId(override val id: String) : Tag
@@ -27,7 +29,7 @@ data class TuitionPaid(
     val amount: Double,
     val paidAt: Instant = Instant.now(),
     val semester: String
-) : Event
+) : AppEvent
 
 @JvmInline
 value class CoursePublishedId(override val id: String) : Tag
@@ -39,7 +41,7 @@ data class CoursePublished(
     val instructor: String,
     val credits: Int,
     val publishAt: Instant = Instant.now()
-) : Event
+) : AppEvent
 
 @JvmInline
 value class EnrolledId(override val id: String) : Tag
@@ -49,7 +51,7 @@ data class Enrolled(
     val tuitionPaid: TuitionPaidId,
     val course: CoursePublishedId,
     val enrolledAt: Instant = Instant.now()
-) : Event
+) : AppEvent
 
 @JvmInline
 value class GradedId(override val id: String) : Tag
@@ -60,7 +62,7 @@ data class Graded(
     val enrolledId: EnrolledId,
     val grade: String, // A, B, C, D, F
     val gradedAt: Instant = Instant.now()
-) : Event
+) : AppEvent
 
 @JvmInline
 value class StudentDeregisteredId(override val id: String) : Tag
@@ -75,33 +77,35 @@ data class StudentDeregistered(
 
 /** Corresponding Commands **/
 
+sealed interface AppCommand : Command
+
 data class RegisterStudent(
     val firstName: String,
     val lastName: String,
     val email: String
-) : Command
+) : AppCommand
 
 data class PayTuition(
     val student: StudentRegisteredId,
     val amount: Double,
     val semester: String
-) : Command
+) : AppCommand
 
 data class EnrollInCourse(
     val tuitionPaid: TuitionPaidId,
     val course: CoursePublishedId,
-) : Command
+) : AppCommand
 
 data class PublishCourse(
     val courseName: String,
     val instructor: String,
     val credits: Int
-) : Command
+) : AppCommand
 
 data class GradeStudent(
     val enrolled: EnrolledId,
     val grade: String
-) : Command
+) : AppCommand
 
 data class DeregisterStudent(
     val student: StudentRegisteredId,

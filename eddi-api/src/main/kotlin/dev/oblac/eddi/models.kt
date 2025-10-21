@@ -40,29 +40,12 @@ interface Tag {
     val id: String
 }
 
-data class CommandEnvelope<T : Command>(
-    val id: Long,
-    val command: T,
-    val timestamp: Instant
-)
-
 data class EventEnvelope<E : Event>(
     val sequence: Long,
     val correlationId: Long,   // todo add CorrelationId value type
     val event: E,
     val eventType: EventType = EventType.of(event::class),
-    val history: Map<Tag, Long>,
     val tags: Set<Tag> = event.tags(),
     val timestamp: Instant = Instant.now(),
 )
 
-data class Eddi(
-    val commandBus: CommandBus,
-    val commandStore: CommandStore,
-    val eventBus: EventBus,
-    val eventStore: EventStore,
-    val eventStoreRepo: EventStoreRepo,
-    val eventStoreOutbox: EventStoreOutbox,
-    val serviceRegistry: ServiceRegistry,
-    val projector: Projector
-)
