@@ -9,18 +9,19 @@ import java.util.*
 fun main() {
 
     val eventStore = MemEventStore()
+    val eventStoreInbox = eventStore as EventStoreInbox
 
     val commandHandler: CommandHandler = { cmd ->
         when (val command = cmd as AppCommand) {
-            is RegisterStudent -> registerStudent(command)
-            is PublishCourse -> publishCourse(command)
-            is PayTuition -> payTuition(command)
-            is EnrollInCourse -> enrollInCourse(command)
-            is GradeStudent -> gradeStudent(command)
+            is RegisterStudent -> registerStudent(eventStoreInbox, command)
+            is PublishCourse -> publishCourse(eventStoreInbox, command)
+            is PayTuition -> payTuition(eventStoreInbox, command)
+            is EnrollInCourse -> enrollInCourse(eventStoreInbox, command)
+            is GradeStudent -> gradeStudent(eventStoreInbox, command)
         }
     }
 
-    val runCommand = runCommand(commandHandler, eventStore)
+    val runCommand = runCommand(commandHandler)
 
     val eventHandler: EventListener = {
         when (val event = it.event as AppEvent) {
@@ -38,21 +39,25 @@ fun main() {
             is StudentRegistered -> {
                 runCommand(PayTuition(event.id, 1500.0, "Fall 2024"))
             }
+
             is CoursePublished -> {
                 val tuitionPaid = eventStore.findLastTaggedEvent(EventType.of(TuitionPaid::class))
                 if (tuitionPaid != null) {
                     runCommand(EnrollInCourse((tuitionPaid as EventEnvelope<TuitionPaid>).event.id, event.id))
                 }
             }
+
             is TuitionPaid -> {
                 val coursePublished = eventStore.findLastTaggedEvent(EventType.of(CoursePublished::class))
                 if (coursePublished != null) {
                     runCommand(EnrollInCourse(event.id, (coursePublished as EventEnvelope<CoursePublished>).event.id))
                 }
             }
+
             is Enrolled -> {
                 runCommand(GradeStudent(event.id, "A"))
             }
+
             is Graded -> {
                 println("✅ Student graded: ${event.enrolledId} -> ${event.grade}")
             }
@@ -69,10 +74,10 @@ fun main() {
     readln()
 }
 
-fun registerStudent(command: RegisterStudent): Sequence<StudentRegistered> {
+fun registerStudent(inbox: EventStoreInbox, command: RegisterStudent) {
     println("${System.currentTimeMillis()} 🔥 Registering student: ${command.firstName} ${command.lastName}")
-    return sequenceOf(
-        StudentRegistered(
+    inbox.storeEvent(
+        0, StudentRegistered(
             id = StudentRegisteredId("STU-${UUID.randomUUID()}"),
             firstName = command.firstName,
             lastName = command.lastName,
@@ -85,9 +90,9 @@ fun studentRegistered(event: StudentRegistered) {
     println("${System.currentTimeMillis()} 🎉 Student registered with ID: ${event.id}")
 }
 
-fun publishCourse(command: PublishCourse): Sequence<CoursePublished> {
+fun publishCourse(inbox: EventStoreInbox, command: PublishCourse) {
     println("${System.currentTimeMillis()} 🔥 Publishing course: ${command.courseName}")
-    return sequenceOf(
+    inbox.storeEvent(0,
         CoursePublished(
             id = CoursePublishedId("COURSE-${UUID.randomUUID()}"),
             courseName = command.courseName,
@@ -101,9 +106,10 @@ fun coursePublished(event: CoursePublished) {
     println("${System.currentTimeMillis()} 🎉 Course published with ID: ${event.id}")
 }
 
-fun payTuition(command: PayTuition): Sequence<TuitionPaid> {
+fun payTuition(inbox: EventStoreInbox, command: PayTuition) {
     println("${System.currentTimeMillis()} 🔥 Processing tuition payment for student: ${command.student}")
-    return sequenceOf(
+    inbox.storeEvent(
+        0,
         TuitionPaid(
             id = TuitionPaidId("PAY-${UUID.randomUUID()}"),
             student = command.student,
@@ -117,9 +123,10 @@ fun tuitionPaid(event: TuitionPaid) {
     println("${System.currentTimeMillis()} 🎉 Tuition paid with ID: ${event.id} for amount: ${event.amount}")
 }
 
-fun enrollInCourse(command: EnrollInCourse): Sequence<Enrolled> {
+fun enrollInCourse(inbox: EventStoreInbox, command: EnrollInCourse) {
     println("${System.currentTimeMillis()} 🔥 Enrolling student ${command.tuitionPaid} in course ${command.course}")
-    return sequenceOf(
+    inbox.storeEvent(
+        0,
         Enrolled(
             id = EnrolledId("ENR-${UUID.randomUUID()}"),
             tuitionPaid = command.tuitionPaid,
@@ -128,9 +135,9 @@ fun enrollInCourse(command: EnrollInCourse): Sequence<Enrolled> {
     )
 }
 
-fun gradeStudent(command: GradeStudent): Sequence<Graded> {
+fun gradeStudent(inbox: EventStoreInbox, command: GradeStudent) {
     println("${System.currentTimeMillis()} 🔥 Grading ${command.grade}")
-    return sequenceOf(
+    inbox.storeEvent(0,
         Graded(
             id = GradedId("GRD-${UUID.randomUUID()}"),
             enrolledId = command.enrolled,
