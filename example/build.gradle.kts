@@ -8,7 +8,7 @@ application {
 }
 
 dependencies {
-    implementation(project(":eddi-api"))
-    implementation(project(":eddi-memory"))
     implementation(libs.kotlinx.coroutines)
+    implementation(project(":eddi-api"))
+    implementation(project(":eddi-db"))
 }

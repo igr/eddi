@@ -1,43 +1,32 @@
-package dev.oblac.eddi.memory
+package dev.oblac.eddi.db
 
 import dev.oblac.eddi.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
-class MemEventStore : EventStoreInbox, EventStoreRepo {
+class DbEventStore : EventStoreInbox, EventStoreRepo {
 
-    private val atomicCounter = AtomicLong(0)
-
-    override fun <E : Event> storeEvent(correlationId: Long, event: E): EventEnvelope<E> {
-        val ee = EventEnvelope(
-            sequence = atomicCounter.incrementAndGet(),
-            correlationId = correlationId,
-            event = event,
-        )
-        storedEvents.add(ee as EventEnvelope<Event>)
-        return ee
+    override fun <E : Event> storeEvent(correlationId: ULong, event: E): EventEnvelope<E> {
+        return dbStoreEvent(correlationId, event)
     }
 
     private val lastEventIndex = AtomicLong(0)
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
-    fun startInbox(dispatch: EventListener) {
+    fun startInbox(eventListener: EventListener) {
         scope.launch {
             while (true) {
-                val currentIndex = lastEventIndex.get()
-                val newEvents = findLastEvents(currentIndex.toInt())
-                for (event in newEvents) {
-                    println("MemEventStore: dispatching event #${event.sequence}: ${event.event}")
-                    dispatch(event)
-                    lastEventIndex.incrementAndGet()
+                val newEvents = fetchLastUnpublishedEvents()
+                for (event in newEvents.events) {
+                    println("Dispatching event #${event.sequence}: ${event.event}")
+                    eventListener(event)
+                    dbMarkEventAsPublished(event.sequence)
                 }
-                kotlinx.coroutines.delay(100L)
+
+                delay(100L)
             }
         }
     }
@@ -54,9 +43,9 @@ class MemEventStore : EventStoreInbox, EventStoreRepo {
             .filterIndexed { index, _ -> index >= fromIndex }
             .asSequence()
 
-    override fun findLastTaggedEvent(eventType: EventType, tag: Tag): EventEnvelope<Event>? {
+    override fun findLastTaggedEvent(eventName: EventName, tag: Tag): EventEnvelope<Event>? {
         return storedEvents.lastOrNull {
-            if (it.eventType != eventType) {
+            if (it.eventName != eventName) {
                 return@lastOrNull false
             }
             val event = it.event
@@ -78,8 +67,8 @@ class MemEventStore : EventStoreInbox, EventStoreRepo {
     }
 
     // todo return Event?
-    override fun findLastTaggedEvent(eventType: EventType): EventEnvelope<Event>? {
-        return storedEvents.filterIndexed { index, _ -> index <= lastEventIndex.get() }.lastOrNull { it.eventType == eventType }
+    override fun findLastTaggedEvent(eventName: EventName): EventEnvelope<Event>? {
+        return storedEvents.filterIndexed { index, _ -> index <= lastEventIndex.get() }.lastOrNull { it.eventName == eventName }
     }
 
     override fun findLastTaggedEvent(tag: Tag): EventEnvelope<Event>? {

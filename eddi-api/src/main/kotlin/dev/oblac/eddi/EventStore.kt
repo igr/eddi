@@ -16,9 +16,9 @@ interface EventStoreRepo {
     /**
      * Finds the last even of the specified type associated with the given tag.
      */
-    fun findLastTaggedEvent(eventType: EventType, tag: Tag): EventEnvelope<Event>?
+    fun findLastTaggedEvent(eventName: EventName, tag: Tag): EventEnvelope<Event>?
 
-    fun findLastTaggedEvent(eventType: EventType): EventEnvelope<Event>?
+    fun findLastTaggedEvent(eventName: EventName): EventEnvelope<Event>?
 
     /**
      * Finds the last event associated with the given tag, regardless of event type.

@@ -9,20 +9,17 @@ import kotlin.reflect.KClass
 interface Command
 
 @JvmInline
-value class EventType(val name: String) {
-    companion object {
-        fun of(klass: KClass<*>) = EventType(klass.simpleName ?: error("Event class must have a simple name"))
+value class EventName(val value: String) {
+    companion object Companion {
+        fun of(event: Event) = of(event::class)
+        fun of(klass: KClass<*>) = EventName(klass.simpleName ?: error("Event class must have a simple name"))
     }
 }
 
 /**
  * Marker interface for Events.
  */
-interface Event {
-    companion object {
-        inline fun <reified T : Event> type() = EventType.of(T::class)
-    }
-}
+interface Event
 
 /**
  * Reflectively extracts all Tag properties from the Event instance.
@@ -41,11 +38,20 @@ interface Tag {
 }
 
 data class EventEnvelope<E : Event>(
-    val sequence: Long,
-    val correlationId: Long,   // todo add CorrelationId value type
+    val sequence: ULong,
+    val correlationId: ULong,   // todo add CorrelationId value type
     val event: E,
-    val eventType: EventType = EventType.of(event::class),
-    val tags: Set<Tag> = event.tags(),
+    val eventName: EventName,
+    val tags: Set<Tag>,
     val timestamp: Instant = Instant.now(),
-)
-
+) {
+    companion object {
+        fun of(sequence: ULong, correlationId: ULong, event: Event) = EventEnvelope(
+            sequence = sequence,
+            correlationId = correlationId,
+            event = event,
+            eventName = EventName.of(event),
+            tags = event.tags(),
+        )
+    }
+}

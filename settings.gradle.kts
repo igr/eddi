@@ -5,6 +5,5 @@ plugins {
 rootProject.name = "eddi"
 
 include("eddi-api")
-include("eddi-memory")
-include("eddi-sqlite")
+include("eddi-db")
 include("example")

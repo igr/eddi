@@ -2,13 +2,19 @@ package dev.oblac.eddi.example.college
 
 import dev.oblac.eddi.*
 import dev.oblac.eddi.EventListener
-import dev.oblac.eddi.memory.MemEventStore
+import dev.oblac.eddi.db.Db
+import dev.oblac.eddi.db.DbEventStore
 import java.util.*
 
 
 fun main() {
+    val db = Db(
+        jdbcUrl = "jdbc:postgresql://localhost:7432/eddi",
+        username = "eddi_user",
+        password = "eddi_password"
+    )
 
-    val eventStore = MemEventStore()
+    val eventStore = DbEventStore()
     val eventStoreInbox = eventStore as EventStoreInbox
 
     val commandHandler: CommandHandler = { cmd ->
@@ -41,14 +47,14 @@ fun main() {
             }
 
             is CoursePublished -> {
-                val tuitionPaid = eventStore.findLastTaggedEvent(EventType.of(TuitionPaid::class))
+                val tuitionPaid = eventStore.findLastTaggedEvent(EventName.of(TuitionPaid::class))
                 if (tuitionPaid != null) {
                     runCommand(EnrollInCourse((tuitionPaid as EventEnvelope<TuitionPaid>).event.id, event.id))
                 }
             }
 
             is TuitionPaid -> {
-                val coursePublished = eventStore.findLastTaggedEvent(EventType.of(CoursePublished::class))
+                val coursePublished = eventStore.findLastTaggedEvent(EventName.of(CoursePublished::class))
                 if (coursePublished != null) {
                     runCommand(EnrollInCourse(event.id, (coursePublished as EventEnvelope<CoursePublished>).event.id))
                 }
@@ -77,7 +83,7 @@ fun main() {
 fun registerStudent(inbox: EventStoreInbox, command: RegisterStudent) {
     println("${System.currentTimeMillis()} 🔥 Registering student: ${command.firstName} ${command.lastName}")
     inbox.storeEvent(
-        0, StudentRegistered(
+        0u, StudentRegistered(
             id = StudentRegisteredId("STU-${UUID.randomUUID()}"),
             firstName = command.firstName,
             lastName = command.lastName,
@@ -92,7 +98,7 @@ fun studentRegistered(event: StudentRegistered) {
 
 fun publishCourse(inbox: EventStoreInbox, command: PublishCourse) {
     println("${System.currentTimeMillis()} 🔥 Publishing course: ${command.courseName}")
-    inbox.storeEvent(0,
+    inbox.storeEvent(0u,
         CoursePublished(
             id = CoursePublishedId("COURSE-${UUID.randomUUID()}"),
             courseName = command.courseName,
@@ -109,7 +115,7 @@ fun coursePublished(event: CoursePublished) {
 fun payTuition(inbox: EventStoreInbox, command: PayTuition) {
     println("${System.currentTimeMillis()} 🔥 Processing tuition payment for student: ${command.student}")
     inbox.storeEvent(
-        0,
+        0u,
         TuitionPaid(
             id = TuitionPaidId("PAY-${UUID.randomUUID()}"),
             student = command.student,
@@ -126,7 +132,7 @@ fun tuitionPaid(event: TuitionPaid) {
 fun enrollInCourse(inbox: EventStoreInbox, command: EnrollInCourse) {
     println("${System.currentTimeMillis()} 🔥 Enrolling student ${command.tuitionPaid} in course ${command.course}")
     inbox.storeEvent(
-        0,
+        0u,
         Enrolled(
             id = EnrolledId("ENR-${UUID.randomUUID()}"),
             tuitionPaid = command.tuitionPaid,
@@ -137,7 +143,7 @@ fun enrollInCourse(inbox: EventStoreInbox, command: EnrollInCourse) {
 
 fun gradeStudent(inbox: EventStoreInbox, command: GradeStudent) {
     println("${System.currentTimeMillis()} 🔥 Grading ${command.grade}")
-    inbox.storeEvent(0,
+    inbox.storeEvent(0u,
         Graded(
             id = GradedId("GRD-${UUID.randomUUID()}"),
             enrolledId = command.enrolled,
