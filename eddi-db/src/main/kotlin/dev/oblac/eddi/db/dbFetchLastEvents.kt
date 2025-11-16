@@ -2,6 +2,7 @@ package dev.oblac.eddi.db
 
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
+import dev.oblac.eddi.EventName
 import dev.oblac.eddi.db.tables.Events
 import dev.oblac.eddi.db.tables.EventsOffset
 import org.jetbrains.exposed.sql.ResultRow
@@ -49,8 +50,8 @@ private fun ResultRow.toEventEnvelope(): EventEnvelope<Event> {
         sequence = this[Events.sequence],
         correlationId = this[Events.correlationId],
         event = this[Events.data],
-        eventName = dev.oblac.eddi.EventName(this[Events.name]),
-        tags = this[Events.tags],
+        eventName = EventName(this[Events.name]),
+        tags = this[Events.tags].toSet(),
         timestamp = this[Events.createdAt],
     )
 }

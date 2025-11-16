@@ -7,7 +7,7 @@ CREATE TABLE events
     cid  BIGINT      NOT NULL,
     name TEXT        NOT NULL,
     data JSONB       NOT NULL,
-    tags JSONB                DEFAULT '[]'::JSONB NOT NULL,
+    tags JSONB       NOT NULL DEFAULT '[]'::JSONB,
     ts   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

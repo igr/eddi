@@ -3,12 +3,9 @@ plugins {
 }
 dependencies {
     implementation(project(":eddi-api"))
+    implementation(project(":eddi-json"))
     implementation(libs.kotlinx.coroutines)
     implementation(kotlin("reflect"))
-
-    // JSON serialization
-    implementation(libs.jackson.kotlin)
-    implementation(libs.jackson.datatype.jsr310)
 
     // Exposed ORM
     implementation("org.jetbrains.exposed:exposed-core:0.56.0")
