@@ -14,8 +14,8 @@ object Events : Table("events") {
     val correlationId = ulong("cid")
     val name = text("name")
     val data = jsonb("data",
-        { Json.toEventJson(it) },
-        { Json.fromEventJson(it) }
+        { Json.toJson(it) },
+        { Json.fromJson<Event>(it) }
     )
     val createdAt = timestamp("ts")
 

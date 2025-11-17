@@ -15,7 +15,6 @@ import dev.oblac.eddi.Event
 )
 private interface EventMixIn
 
-
 object Json {
     val objectMapper: ObjectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -25,12 +24,7 @@ object Json {
     fun <T> toJson(value: T): String =
         objectMapper.writeValueAsString(value)
 
-    fun <T: Event> toEventJson(value: T): String =
-        objectMapper.writerFor(Event::class.java).writeValueAsString(value)
-
     inline fun <reified T> fromJson(json: String): T =
         objectMapper.readValue(json, T::class.java)
 
-    fun fromEventJson(json: String): Event =
-        objectMapper.readValue(json, Event::class.java)
 }
