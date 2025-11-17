@@ -4,7 +4,7 @@ import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventName
 import dev.oblac.eddi.db.tables.Events
-import dev.oblac.eddi.db.tables.EventsOffset
+import dev.oblac.eddi.db.tables.EventsOffsets
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.max
@@ -18,12 +18,13 @@ data class UnpublishedEvents(
     val events: List<EventEnvelope<Event>>
 )
 
-fun fetchLastUnpublishedEvents(pageSize: Int = 1000): UnpublishedEvents = transaction {
+fun dbFetchLastUnpublishedEvents(consumerId: Long, pageSize: Int = 1000): UnpublishedEvents = transaction {
     // 1. Read last published sequence
-    val lastSeq = EventsOffset
-        .select(EventsOffset.lastSequence)
+    val lastSeq = EventsOffsets
+        .select(EventsOffsets.lastSequence)
+        .where { EventsOffsets.id eq consumerId }
         .limit(1)
-        .single()[EventsOffset.lastSequence]
+        .singleOrNull()?.get(EventsOffsets.lastSequence) ?: 0u
 
     // 2. Get latest event seq
     val latestSeq = Events
@@ -32,7 +33,8 @@ fun fetchLastUnpublishedEvents(pageSize: Int = 1000): UnpublishedEvents = transa
 
     // 3. Fetch next batch of events (paginated)
     val events = Events
-        .selectAll().where { Events.sequence greater lastSeq }
+        .selectAll()
+        .where { Events.sequence greater lastSeq }
         .orderBy(Events.sequence, SortOrder.ASC)
         .limit(pageSize)
         .map { it.toEventEnvelope() }
@@ -51,7 +53,6 @@ private fun ResultRow.toEventEnvelope(): EventEnvelope<Event> {
         correlationId = this[Events.correlationId],
         event = this[Events.data],
         eventName = EventName(this[Events.name]),
-        tags = this[Events.tags].toSet(),
         timestamp = this[Events.createdAt],
     )
 }

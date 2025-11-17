@@ -2,6 +2,7 @@ package dev.oblac.eddi.example.college
 
 import dev.oblac.eddi.Command
 import dev.oblac.eddi.Event
+import dev.oblac.eddi.EventName
 import dev.oblac.eddi.Tag
 import java.time.Instant
 
@@ -32,7 +33,11 @@ data class TuitionPaid(
 ) : AppEvent
 
 @JvmInline
-value class CoursePublishedId(override val id: String) : Tag
+value class CoursePublishedId(override val id: String) : Tag {
+    companion object {
+        val eventName: EventName = EventName.of(CoursePublished::class)
+    }
+}
 
 // Course publishing event
 data class CoursePublished(
@@ -41,7 +46,11 @@ data class CoursePublished(
     val instructor: String,
     val credits: Int,
     val publishAt: Instant = Instant.now()
-) : AppEvent
+) : AppEvent {
+    companion object {
+        val name: EventName = EventName.of(CoursePublished::class)
+    }
+}
 
 @JvmInline
 value class EnrolledId(override val id: String) : Tag

@@ -42,7 +42,6 @@ data class EventEnvelope<E : Event>(
     val correlationId: ULong,   // todo add CorrelationId value type
     val event: E,
     val eventName: EventName,
-    val tags: Set<Tag>,
     val timestamp: Instant = Instant.now(),
 ) {
     companion object {
@@ -51,7 +50,6 @@ data class EventEnvelope<E : Event>(
             correlationId = correlationId,
             event = event,
             eventName = EventName.of(event),
-            tags = event.tags(),
         )
     }
 }

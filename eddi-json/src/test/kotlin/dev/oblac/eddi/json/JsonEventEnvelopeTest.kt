@@ -20,7 +20,6 @@ class JsonEventEnvelopeTest {
             correlationId = faker.random.nextLong().toULong(),
             event = event,
             eventName = EventName.of(event),
-            tags = emptySet(),
             timestamp = Instant.now()
         )
 
@@ -34,35 +33,6 @@ class JsonEventEnvelopeTest {
         assertEquals(envelope.event, deserialized.event)
         assertEquals(envelope.eventName, deserialized.eventName)
         assertEquals(envelope.timestamp, deserialized.timestamp)
-    }
-
-    @Test
-    fun `should serialize and deserialize EventEnvelope with tags`() {
-        // Given
-        val event = TestEvent(faker.random.randomString(), faker.random.nextInt())
-        val userId = UserId(faker.random.nextUUID())
-        val envelope = EventEnvelope(
-            sequence = faker.random.nextLong().toULong(),
-            correlationId = faker.random.nextLong().toULong(),
-            event = event,
-            eventName = EventName.of(event),
-            tags = setOf(userId),
-            timestamp = Instant.now()
-        )
-
-        // When
-        val json = Json.toJson(envelope)
-        val deserialized = Json.fromJson<EventEnvelope<TestEvent>>(json)
-
-        // Then
-        assertEquals(envelope.sequence, deserialized.sequence)
-        assertEquals(envelope.correlationId, deserialized.correlationId)
-        assertEquals(envelope.event, deserialized.event)
-        assertEquals(envelope.tags, deserialized.tags)
-        assertEquals(1, deserialized.tags.size)
-
-        val deserializedTag = deserialized.tags.first() as UserId
-        assertEquals(userId.id, deserializedTag.id)
     }
 
     @Test

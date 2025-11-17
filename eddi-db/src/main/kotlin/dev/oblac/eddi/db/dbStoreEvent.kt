@@ -19,7 +19,6 @@ fun <E : Event> dbStoreEvent(correlationId: ULong, event: E): EventEnvelope<E> {
             it[Events.correlationId] = correlationId
             it[name] = eventName.value
             it[data] = event
-            it[tags] = eventTags.toTypedArray()
             it[createdAt] = Instant.now()
         } get Events.sequence
     }
@@ -29,6 +28,5 @@ fun <E : Event> dbStoreEvent(correlationId: ULong, event: E): EventEnvelope<E> {
         correlationId = correlationId,
         event = event,
         eventName = eventName,
-        tags = eventTags,
     )
 }

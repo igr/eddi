@@ -1,13 +1,14 @@
 package dev.oblac.eddi.db
 
-import dev.oblac.eddi.db.tables.EventsOffset
+import dev.oblac.eddi.db.tables.EventsOffsets
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.upsert
 import java.time.Instant
 
-fun dbMarkEventAsPublished(sequence: ULong) {
+fun dbMarkEventAsPublished(processorId: Long, sequence: ULong) {
     transaction {
-        EventsOffset.upsert {
+        EventsOffsets.upsert {
+            it[id] = processorId
             it[lastSequence] = sequence
             it[updatedAt] = Instant.now()
         }
