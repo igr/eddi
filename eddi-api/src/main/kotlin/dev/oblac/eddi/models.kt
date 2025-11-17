@@ -11,8 +11,7 @@ interface Command
 @JvmInline
 value class EventName(val value: String) {
     companion object Companion {
-        fun of(event: Event) = of(event::class)
-        fun of(klass: KClass<*>) = EventName(klass.simpleName ?: error("Event class must have a simple name"))
+        fun of(event: Event) = EventName(event::class.simpleName ?: error("Event class must have a simple name"))
     }
 }
 
@@ -43,13 +42,4 @@ data class EventEnvelope<E : Event>(
     val event: E,
     val eventName: EventName,
     val timestamp: Instant = Instant.now(),
-) {
-    companion object {
-        fun of(sequence: ULong, correlationId: ULong, event: Event) = EventEnvelope(
-            sequence = sequence,
-            correlationId = correlationId,
-            event = event,
-            eventName = EventName.of(event),
-        )
-    }
-}
+)

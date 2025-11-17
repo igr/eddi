@@ -11,7 +11,7 @@ import java.time.Instant
 
 fun <E : Event> dbStoreEvent(correlationId: ULong, event: E): EventEnvelope<E> {
 
-    val eventName = EventName.of(event::class)
+    val eventName = EventName.of(event)
     val eventTags = event.tags()
 
     val sequence = transaction {
