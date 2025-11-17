@@ -17,9 +17,9 @@ fun <E : Event> dbStoreEvent(correlationId: ULong, event: E): EventEnvelope<E> {
     val sequence = transaction {
         Events.insert {
             it[Events.correlationId] = correlationId
-            it[name] = eventName.value
-            it[data] = event
-            it[createdAt] = Instant.now()
+            it[Events.name] = eventName.value
+            it[Events.data] = event
+            it[Events.createdAt] = Instant.now()
         } get Events.sequence
     }
 

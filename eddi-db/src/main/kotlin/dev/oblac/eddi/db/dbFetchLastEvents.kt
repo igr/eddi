@@ -2,10 +2,9 @@ package dev.oblac.eddi.db
 
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.EventName
 import dev.oblac.eddi.db.tables.Events
 import dev.oblac.eddi.db.tables.EventsOffsets
-import org.jetbrains.exposed.sql.ResultRow
+import dev.oblac.eddi.db.tables.toEventEnvelope
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.max
 import org.jetbrains.exposed.sql.selectAll
@@ -44,15 +43,5 @@ fun dbFetchLastUnpublishedEvents(consumerId: Long, pageSize: Int = 1000): Unpubl
         latestSeq = latestSeq,
         inSync = lastSeq == latestSeq,
         events = events
-    )
-}
-
-private fun ResultRow.toEventEnvelope(): EventEnvelope<Event> {
-    return EventEnvelope(
-        sequence = this[Events.sequence],
-        correlationId = this[Events.correlationId],
-        event = this[Events.data],
-        eventName = EventName(this[Events.name]),
-        timestamp = this[Events.createdAt],
     )
 }
