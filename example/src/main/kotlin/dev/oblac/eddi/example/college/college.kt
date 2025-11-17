@@ -54,15 +54,17 @@ fun main() {
             }
 
             is CoursePublished -> {
-                val tuitionPaid = eventStore.findLastEventByTag(TuitionPaidId(tuitionPaidId?.id ?: ""))
+                val tuitionPaid = eventStore.findLastEventByTagBefore(it, TuitionPaidId(tuitionPaidId?.id ?: ""))
                 if (tuitionPaid != null) {
+                    println("TTTTTTTTTTTTTTTTTTTTTTTTTT")
                     runCommand(EnrollInCourse((tuitionPaid as EventEnvelope<TuitionPaid>).event.id, event.id))
                 }
             }
 
             is TuitionPaid -> {
-                val coursePublished = eventStore.findLastEventByTag(CoursePublishedId(coursePublishedId?.id ?: ""))
+                val coursePublished = eventStore.findLastEventByTagBefore(it, CoursePublishedId(coursePublishedId?.id ?: ""))
                 if (coursePublished != null) {
+                    println("CCCCCCCCCCCCCCCCCCCCCCCCCC")
                     runCommand(EnrollInCourse(event.id, (coursePublished as EventEnvelope<CoursePublished>).event.id))
                 }
             }
@@ -78,7 +80,7 @@ fun main() {
     }
 
     val dispatchEvent = dispatchEvent(eventHandler)
-    val dispatcher = dispatchEvent + eventListener + Projections
+    val dispatcher = dispatchEvent + eventListener + Projections    // todo projections ARE INDEPENDENT!!!!!!!!!!!
     eventStore.startInbox { dispatcher(it) }
 
     runCommand(RegisterStudent("John", "Doe", "john@foo.com"))
@@ -103,7 +105,7 @@ fun studentRegistered(event: StudentRegistered) {
     println("${System.currentTimeMillis()} 🎉 Student registered with ID: ${event.id}")
 }
 
-fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, idConsumer: (CoursePublishedId) -> Unit) {
+fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, consumeId: (CoursePublishedId) -> Unit) {
     println("${System.currentTimeMillis()} 🔥 Publishing course: ${command.courseName}")
     val id = CoursePublishedId("COURSE-${UUID.randomUUID()}")
     inbox.storeEvent(0u,
@@ -114,14 +116,14 @@ fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, idConsumer: (C
             credits = command.credits
         )
     )
-    idConsumer(id)
+    consumeId(id)
 }
 
 fun coursePublished(event: CoursePublished) {
     println("${System.currentTimeMillis()} 🎉 Course published with ID: ${event.id}")
 }
 
-fun payTuition(inbox: EventStoreInbox, command: PayTuition, idConsumer: (TuitionPaidId) -> Unit) {
+fun payTuition(inbox: EventStoreInbox, command: PayTuition, consumeId: (TuitionPaidId) -> Unit) {
     println("${System.currentTimeMillis()} 🔥 Processing tuition payment for student: ${command.student}")
     val id = TuitionPaidId("PAY-${UUID.randomUUID()}")
     inbox.storeEvent(
@@ -133,7 +135,7 @@ fun payTuition(inbox: EventStoreInbox, command: PayTuition, idConsumer: (Tuition
             semester = command.semester
         )
     )
-    idConsumer(id)
+    consumeId(id)
 }
 
 fun tuitionPaid(event: TuitionPaid) {
