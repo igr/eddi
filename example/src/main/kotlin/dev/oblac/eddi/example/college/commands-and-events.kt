@@ -1,79 +1,102 @@
 package dev.oblac.eddi.example.college
 
-import dev.oblac.eddi.Command
-import dev.oblac.eddi.Event
-import dev.oblac.eddi.Tag
+import dev.oblac.eddi.*
 import java.time.Instant
 
 sealed interface AppEvent : Event
 
-@JvmInline
-value class StudentRegisteredId(override val id: String) : Tag
+data class StudentRegisteredRef(override val seq: ULong) : Tag {
+    override val name get() = StudentRegistered.NAME
+}
+
+fun EventEnvelope<StudentRegistered>.ref(): StudentRegisteredRef {
+    return StudentRegisteredRef(this.sequence)
+}
 
 // Root event - foundational event for student lifecycle
 data class StudentRegistered(
-    val id: StudentRegisteredId,
     val firstName: String,
     val lastName: String,
     val email: String,
     val registeredAt: Instant = Instant.now()
-) : AppEvent
+) : AppEvent {
+    companion object {
+        val NAME = EventName.of(StudentRegistered::class)
+    }
+}
 
-@JvmInline
-value class TuitionPaidId(override val id: String) : Tag
+data class TuitionPaidRef(override val seq: ULong) : Tag {
+    override val name get() = TuitionPaid.NAME
+}
+
+fun EventEnvelope<TuitionPaid>.ref(): TuitionPaidRef {
+    return TuitionPaidRef(this.sequence)
+}
 
 // Payment event
 data class TuitionPaid(
-    val id: TuitionPaidId,
-    val student: StudentRegisteredId,
+    val student: StudentRegisteredRef,
     val amount: Double,
     val paidAt: Instant = Instant.now(),
     val semester: String
-) : AppEvent
+) : AppEvent {
+    companion object {
+        val NAME = EventName.of(TuitionPaid::class)
+    }
+}
 
-@JvmInline
-value class CoursePublishedId(override val id: String) : Tag
+
+data class CoursePublishedRef(override val seq: ULong) : Tag {
+    override val name get() = CoursePublished.NAME
+}
+
+fun EventEnvelope<CoursePublished>.ref(): CoursePublishedRef {
+    return CoursePublishedRef(this.sequence)
+}
 
 // Course publishing event
 data class CoursePublished(
-    val id: CoursePublishedId,
     val courseName: String,
     val instructor: String,
     val credits: Int,
     val publishAt: Instant = Instant.now()
-) : AppEvent
+) : AppEvent {
+    companion object {
+        val NAME = EventName.of(CoursePublished::class)
+    }
+}
 
-@JvmInline
-value class EnrolledId(override val id: String) : Tag
+
+data class EnrolledRef(override val seq: ULong) : Tag {
+    override val name get() = Enrolled.NAME
+}
+
 
 data class Enrolled(
-    val id: EnrolledId,
-    val tuitionPaid: TuitionPaidId,
-    val course: CoursePublishedId,
+    val tuitionPaid: TuitionPaidRef,
+    val course: CoursePublishedRef,
     val enrolledAt: Instant = Instant.now()
-) : AppEvent
+) : AppEvent {
+    companion object {
+        val NAME = EventName.of(Enrolled::class)
+    }
+}
 
-@JvmInline
-value class GradedId(override val id: String) : Tag
+fun EventEnvelope<Enrolled>.ref(): EnrolledRef {
+    return EnrolledRef(this.sequence)
+}
+
 
 // Grading event - depends on both Enrolled and CoursePublished
 data class Graded(
-    val id: GradedId,
-    val enrolledId: EnrolledId,
+    val enrolled: EnrolledRef,
     val grade: String, // A, B, C, D, F
     val gradedAt: Instant = Instant.now()
-) : AppEvent
-
-@JvmInline
-value class StudentDeregisteredId(override val id: String) : Tag
-
-// Student departure event - depends on StudentRegistered
-data class StudentDeregistered(
-    val id: StudentDeregisteredId,
-    val student: StudentRegisteredId,
-    val deregisteredAt: Instant = Instant.now(),
-    val reason: String? = null
-) : Event
+) : AppEvent {
+    companion object {
+        val NAME = EventName.of(Graded::class)
+    }
+}
 
 /** Corresponding Commands **/
 
@@ -86,14 +109,14 @@ data class RegisterStudent(
 ) : AppCommand
 
 data class PayTuition(
-    val student: StudentRegisteredId,
+    val student: StudentRegisteredRef,
     val amount: Double,
     val semester: String
 ) : AppCommand
 
 data class EnrollInCourse(
-    val tuitionPaid: TuitionPaidId,
-    val course: CoursePublishedId,
+    val tuitionPaid: TuitionPaidRef,
+    val course: CoursePublishedRef,
 ) : AppCommand
 
 data class PublishCourse(
@@ -103,11 +126,11 @@ data class PublishCourse(
 ) : AppCommand
 
 data class GradeStudent(
-    val enrolled: EnrolledId,
+    val enrolled: EnrolledRef,
     val grade: String
 ) : AppCommand
 
 data class DeregisterStudent(
-    val student: StudentRegisteredId,
+    val student: StudentRegisteredRef,
     val reason: String? = null
 ) : Command

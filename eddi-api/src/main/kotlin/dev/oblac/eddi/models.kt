@@ -12,6 +12,7 @@ interface Command
 value class EventName(val value: String) {
     companion object Companion {
         fun of(event: Event) = EventName(event::class.simpleName ?: error("Event class must have a simple name"))
+        fun of(event: KClass<*>) = EventName(event.simpleName ?: error("Event class must have a simple name"))
     }
 }
 
@@ -20,20 +21,20 @@ value class EventName(val value: String) {
  */
 interface Event
 
-/**
- * Reflectively extracts all Tag properties from the Event instance.
- * Returns a set of Tag instances found in the Event.
- */
-fun Event.tags(): Set<Tag> = this::class.members
-    .filter { prop ->
-        val kclass = prop.returnType.classifier as? KClass<*>
-        kclass != null && Tag::class.java.isAssignableFrom(kclass.java)
-    }
-    .mapNotNull { runCatching { it.call(this) as? Tag }.getOrNull() }
-    .toSet()
+fun Event.eventName(): EventName = EventName.of(this)
 
+data class RefTag(
+    val eventName: EventName,
+    val sequence: ULong
+)
+
+/**
+ * Interface for event references that can be converted to RefTag.
+ */
 interface Tag {
-    val id: String
+    val name: EventName
+    val seq: ULong
+    fun ref() = RefTag(name, seq)
 }
 
 data class EventEnvelope<E : Event>(

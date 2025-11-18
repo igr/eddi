@@ -11,6 +11,11 @@ CREATE TABLE events
 );
 
 ---
+--- Add index on events.name for faster event name lookups.
+---
+CREATE INDEX idx_events_name ON events (name);
+
+---
 --- Offset table for reliable event publishing.
 ---
 CREATE TABLE events_offsets

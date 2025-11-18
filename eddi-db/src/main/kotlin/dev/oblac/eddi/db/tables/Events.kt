@@ -22,14 +22,6 @@ object Events : Table("events") {
     override val primaryKey = PrimaryKey(sequence)
 }
 
-// todo: implement generic insert function
-//fun <E: Event> EventEnvelope<E>.foo(insert: UpdateBuilder<*>) {
-//    insert[Events.correlationId] = this.correlationId
-//    insert[Events.name] = this.eventName.value
-//    insert[Events.data] = this.event
-//    insert[Events.createdAt] = Instant.now()
-//}
-
 fun ResultRow.toEventEnvelope(): EventEnvelope<Event> {
     return EventEnvelope(
         sequence = this[Events.sequence],

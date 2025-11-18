@@ -1,11 +1,14 @@
 package dev.oblac.eddi.json
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import dev.oblac.eddi.Event
+import dev.oblac.eddi.EventName
+import dev.oblac.eddi.RefTag
 
 // Mix-in that tells Jackson to put the concrete class into a property.
 @JsonTypeInfo(
@@ -15,11 +18,21 @@ import dev.oblac.eddi.Event
 )
 private interface EventMixIn
 
+// Mix-in for Ref to customize field names during serialization
+private interface RefMixIn {
+    @get:JsonProperty("event")
+    val eventName: EventName
+
+    @get:JsonProperty("seq")
+    val sequence: ULong
+}
+
 object Json {
     val objectMapper: ObjectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         .addMixIn(Event::class.java, EventMixIn::class.java)
+        .addMixIn(RefTag::class.java, RefMixIn::class.java)
 
     fun <T> toJson(value: T): String =
         objectMapper.writeValueAsString(value)
