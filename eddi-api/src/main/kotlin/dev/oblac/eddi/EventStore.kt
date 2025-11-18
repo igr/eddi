@@ -3,5 +3,6 @@ package dev.oblac.eddi
 
 interface EventStoreRepo {
 
-    fun findLastEventByTagBefore(lastEvent: Tag, tag: Tag): EventEnvelope<Event>?
+    // TODO Return type should be stronger typed
+    fun findLastEventByTagBefore(lastEvent: Tag, tagToFind: Tag): EventEnvelope<Event>?
 }

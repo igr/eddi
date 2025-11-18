@@ -14,8 +14,8 @@ class DbEventStore : EventStoreInbox, EventStoreRepo {
         eventProcessor.startInbox(eventListener)
     }
 
-    override fun findLastEventByTagBefore(lastEvent: Tag, tag: Tag): EventEnvelope<Event>? {
-        return dbFindLastEventByTag(lastEvent.seq, tag)
+    override fun findLastEventByTagBefore(lastEvent: Tag, tagToFind: Tag): EventEnvelope<Event>? {
+        return dbFindLastEventByTag(lastEvent.seq, tagToFind)
     }
 
 }
