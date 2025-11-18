@@ -5,10 +5,12 @@ import java.time.Instant
 
 sealed interface AppEvent : Event
 
-data class StudentRegisteredRef(override val seq: ULong) : Tag {
+@JvmInline
+value class StudentRegisteredRef(override val seq: ULong) : Tag {
     override val name get() = StudentRegistered.NAME
 }
 
+@JvmName("studentRegisteredRef")
 fun EventEnvelope<StudentRegistered>.ref(): StudentRegisteredRef {
     return StudentRegisteredRef(this.sequence)
 }
@@ -25,10 +27,12 @@ data class StudentRegistered(
     }
 }
 
-data class TuitionPaidRef(override val seq: ULong) : Tag {
+@JvmInline
+value class TuitionPaidRef(override val seq: ULong) : Tag {
     override val name get() = TuitionPaid.NAME
 }
 
+@JvmName("tuitionPaidRef")
 fun EventEnvelope<TuitionPaid>.ref(): TuitionPaidRef {
     return TuitionPaidRef(this.sequence)
 }
@@ -46,10 +50,12 @@ data class TuitionPaid(
 }
 
 
-data class CoursePublishedRef(override val seq: ULong) : Tag {
+@JvmInline
+value class CoursePublishedRef(override val seq: ULong) : Tag {
     override val name get() = CoursePublished.NAME
 }
 
+@JvmName("coursePublishedRef")
 fun EventEnvelope<CoursePublished>.ref(): CoursePublishedRef {
     return CoursePublishedRef(this.sequence)
 }
@@ -66,11 +72,10 @@ data class CoursePublished(
     }
 }
 
-
-data class EnrolledRef(override val seq: ULong) : Tag {
+@JvmInline
+value class EnrolledRef(override val seq: ULong) : Tag {
     override val name get() = Enrolled.NAME
 }
-
 
 data class Enrolled(
     val tuitionPaid: TuitionPaidRef,
@@ -82,10 +87,10 @@ data class Enrolled(
     }
 }
 
+@JvmName("enrolledRef")
 fun EventEnvelope<Enrolled>.ref(): EnrolledRef {
     return EnrolledRef(this.sequence)
 }
-
 
 // Grading event - depends on both Enrolled and CoursePublished
 data class Graded(
