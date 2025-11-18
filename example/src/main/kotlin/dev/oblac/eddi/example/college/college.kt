@@ -48,47 +48,38 @@ fun main() {
     // real logic
     val eventListener: EventListener = {
         println("📢 Event received: ${it.event}")
-        when (val event = it.event as AppEvent) {
-            is StudentRegistered -> {
+        it.onEvent<StudentRegistered> { e ->
+            runCommand(
+                PayTuition(e.ref(), 1500.0, "Fall 2024")
+            )
+        }
+        it.onEvent<CoursePublished> { e ->
+            val tuitionPaid = eventStore.findLastEventByTagBefore(e, TuitionPaidRef(tuitionPaidId?: 0uL).ref())
+            if (tuitionPaid != null) {
                 runCommand(
-                    PayTuition(
-                        (it as EventEnvelope<StudentRegistered>).ref(),
-                        1500.0,
-                        "Fall 2024"
+                    EnrollInCourse(
+                        (tuitionPaid as EventEnvelope<TuitionPaid>).ref(),
+                        CoursePublishedRef(it.sequence)
                     )
                 )
             }
-
-            is CoursePublished -> {
-                val tuitionPaid = eventStore.findLastEventByTagBefore(it, TuitionPaidRef(tuitionPaidId?: 0uL).ref())
-                if (tuitionPaid != null) {
-                    println("TTTTTTTTTTTTTTTTTTTTTTTTTT")
-                    runCommand(EnrollInCourse(
-                        (tuitionPaid as EventEnvelope<TuitionPaid>).ref(),
-                        CoursePublishedRef(it.sequence))
+        }
+        it.onEvent<TuitionPaid> { e ->
+            val coursePublished = eventStore.findLastEventByTagBefore(e, CoursePublishedRef(coursePublishedId ?: 0u).ref())
+            if (coursePublished != null) {
+                runCommand(
+                    EnrollInCourse(
+                        TuitionPaidRef(e.sequence),
+                        (coursePublished as EventEnvelope<CoursePublished>).ref()
                     )
-                }
+                )
             }
-
-            is TuitionPaid -> {
-                val coursePublished =
-                    eventStore.findLastEventByTagBefore(it, CoursePublishedRef(coursePublishedId ?: 0uL).ref())
-                if (coursePublished != null) {
-                    println("CCCCCCCCCCCCCCCCCCCCCCCCCC")
-                    runCommand(EnrollInCourse(
-                        TuitionPaidRef(it.sequence),
-                        (coursePublished as EventEnvelope<CoursePublished>).ref())
-                    )
-                }
-            }
-
-            is Enrolled -> {
-                runCommand(GradeStudent((it as EventEnvelope<Enrolled>).ref(), "A"))
-            }
-
-            is Graded -> {
-                println("✅ Student graded: ${event} -> ${event.grade}")
-            }
+        }
+        it.onEvent<Enrolled> { e ->
+            runCommand(GradeStudent(e.ref(), "A"))
+        }
+        it.onEvent<Graded> { e ->
+            println("✅ Student graded: ${e.event} -> ${e.event.grade}")
         }
     }
 
