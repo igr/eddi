@@ -26,7 +26,7 @@ object Projections : EventListener {
                 println("🗃️ Student registered: ${event.firstName} ${event.lastName} (${event.email})")
             }
             is TuitionPaid -> {
-                students[event.student.ref().sequence]!!.tuitionPaid = true
+                students[event.student.seq]!!.tuitionPaid = true
                 println("🗃️ Tuition paid: ${event.student} Amount: ${event.amount} for ${event.semester}")
             }
             is CoursePublished -> {

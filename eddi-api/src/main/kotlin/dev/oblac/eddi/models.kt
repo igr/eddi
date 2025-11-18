@@ -23,18 +23,12 @@ interface Event
 
 fun Event.eventName(): EventName = EventName.of(this)
 
-data class RefTag(
-    val eventName: EventName,
-    val sequence: ULong
-)
-
 /**
  * Interface for event references that can be converted to RefTag.
  */
 interface Tag {
     val name: EventName
     val seq: ULong
-    fun ref() = RefTag(name, seq)
 }
 
 data class EventEnvelope<E : Event>(

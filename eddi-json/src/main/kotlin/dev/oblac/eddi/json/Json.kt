@@ -1,6 +1,5 @@
 package dev.oblac.eddi.json
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
@@ -11,7 +10,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventName
-import dev.oblac.eddi.RefTag
 import dev.oblac.eddi.Tag
 
 // Mix-in that tells Jackson to put the concrete class into a property.
@@ -21,15 +19,6 @@ import dev.oblac.eddi.Tag
     property = "@event"
 )
 private interface EventMixIn
-
-// Mix-in for Ref to customize field names during serialization
-private interface RefMixIn {
-    @get:JsonProperty("event")
-    val eventName: EventName
-
-    @get:JsonProperty("seq")
-    val sequence: ULong
-}
 
 // Custom serializer for Tag interface - only serializes the seq field
 private class TagSerializer : JsonSerializer<Tag>() {
@@ -60,7 +49,6 @@ object Json {
         .registerModule(tagModule)
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         .addMixIn(Event::class.java, EventMixIn::class.java)
-        .addMixIn(RefTag::class.java, RefMixIn::class.java)
 
     fun <T> toJson(value: T): String =
         objectMapper.writeValueAsString(value)
