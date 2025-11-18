@@ -54,7 +54,7 @@ fun main() {
             )
         }
         it.onEvent<CoursePublished> { e ->
-            val tuitionPaid = eventStore.findLastEventByTagBefore(e, TuitionPaidRef(tuitionPaidId?: 0uL))
+            val tuitionPaid = eventStore.findLastEventByTagBefore(e.ref(), TuitionPaidRef(tuitionPaidId?: 0uL))
             if (tuitionPaid != null) {
                 runCommand(
                     EnrollInCourse(
@@ -65,7 +65,7 @@ fun main() {
             }
         }
         it.onEvent<TuitionPaid> { e ->
-            val coursePublished = eventStore.findLastEventByTagBefore(e, CoursePublishedRef(coursePublishedId ?: 0u))
+            val coursePublished = eventStore.findLastEventByTagBefore(e.ref(), CoursePublishedRef(coursePublishedId ?: 0u))
             if (coursePublished != null) {
                 runCommand(
                     EnrollInCourse(
