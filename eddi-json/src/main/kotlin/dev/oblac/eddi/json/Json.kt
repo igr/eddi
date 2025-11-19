@@ -10,6 +10,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventName
+import dev.oblac.eddi.Ref
 import dev.oblac.eddi.Tag
 
 // Mix-in that tells Jackson to put the concrete class into a property.
@@ -38,10 +39,33 @@ private class TagDeserializer : JsonDeserializer<Tag>() {
     }
 }
 
+private class RefSerializer : JsonSerializer<Ref>() {
+    override fun serialize(value: Ref, gen: JsonGenerator, serializers: SerializerProvider) {
+        gen.writeStartObject()
+        gen.writeNumberField(value.name.value, value.seq.toLong())
+        gen.writeEndObject()
+    }
+}
+
+private class RefDeserializer : JsonDeserializer<Ref>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Ref {
+        val node = p.codec.readTree<JsonNode>(p)
+        val field = node.fields().next()
+        return Ref(
+            name = EventName(field.key),
+            seq = field.value.asLong().toULong()
+        )
+    }
+}
+
+
 object Json {
     private val tagModule = SimpleModule()
         .addSerializer(Tag::class.java, TagSerializer())
         .addDeserializer(Tag::class.java, TagDeserializer())
+        .addSerializer(Ref::class.java, RefSerializer())
+        .addDeserializer(Ref::class.java, RefDeserializer())
+
 
     val objectMapper: ObjectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())

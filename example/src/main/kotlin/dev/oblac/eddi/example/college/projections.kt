@@ -20,7 +20,7 @@ object Projections : EventListener {
     val courses = mutableMapOf<ULong, CourseView>()
 
     override fun invoke(ee: EventEnvelope<Event>) {
-        when (val event = ee.event as AppEvent) {
+        when (val event = ee.event) {
             is StudentRegistered -> {
                 students[ee.sequence] = StudentView(ee.sequence, "${event.firstName} ${event.lastName}")
                 println("🗃️ Student registered: ${event.firstName} ${event.lastName} (${event.email})")

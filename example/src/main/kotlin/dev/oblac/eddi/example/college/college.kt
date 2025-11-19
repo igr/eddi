@@ -3,9 +3,13 @@ package dev.oblac.eddi.example.college
 import dev.oblac.eddi.*
 import dev.oblac.eddi.db.Db
 import dev.oblac.eddi.db.DbEventStore
+import dev.oblac.eddi.meta.EventsRegistry
 
 
 fun main() {
+    // we need to register events before using the event store
+    Events.register(EventsRegistry.items)
+
     val db = Db(
         jdbcUrl = "jdbc:postgresql://localhost:7432/eddi",
         username = "eddi_user",
@@ -37,7 +41,7 @@ fun main() {
     val runCommand = runCommand(commandHandler)
 
     val eventHandler: EventListener = {
-        when (val event = it.event as AppEvent) {
+        when (val event = it.event) {
             is StudentRegistered -> studentRegistered(event)
             is CoursePublished -> coursePublished(event)
             is TuitionPaid -> tuitionPaid(event)
@@ -50,33 +54,33 @@ fun main() {
         println("📢 Event received: ${it.event}")
         it.onEvent<StudentRegistered> { e ->
             runCommand(
-                PayTuition(e.ref(), 1500.0, "Fall 2024")
+                PayTuition(e.tag(), 1500.0, "Fall 2024")
             )
         }
         it.onEvent<CoursePublished> { e ->
-            val tuitionPaid = eventStore.findLastEventByTagBefore(e.ref(), TuitionPaidRef(tuitionPaidId?: 0uL))
+            val tuitionPaid = eventStore.findLastEventByTagBefore(e.tag(), TuitionPaidTag(tuitionPaidId?: 0uL))
             if (tuitionPaid != null) {
                 runCommand(
                     EnrollInCourse(
-                        (tuitionPaid as EventEnvelope<TuitionPaid>).ref(),
-                        CoursePublishedRef(it.sequence)
+                        (tuitionPaid as EventEnvelope<TuitionPaid>).tag(),
+                        CoursePublishedTag(it.sequence)
                     )
                 )
             }
         }
         it.onEvent<TuitionPaid> { e ->
-            val coursePublished = eventStore.findLastEventByTagBefore(e.ref(), CoursePublishedRef(coursePublishedId ?: 0u))
+            val coursePublished = eventStore.findLastEventByTagBefore(e.tag(), CoursePublishedTag(coursePublishedId ?: 0u))
             if (coursePublished != null) {
                 runCommand(
                     EnrollInCourse(
-                        TuitionPaidRef(e.sequence),
-                        (coursePublished as EventEnvelope<CoursePublished>).ref()
+                        TuitionPaidTag(e.sequence),
+                        (coursePublished as EventEnvelope<CoursePublished>).tag()
                     )
                 )
             }
         }
         it.onEvent<Enrolled> { e ->
-            runCommand(GradeStudent(e.ref(), "A"))
+            runCommand(GradeStudent(e.tag(), "A"))
         }
         it.onEvent<Graded> { e ->
             println("✅ Student graded: ${e.event} -> ${e.event.grade}")

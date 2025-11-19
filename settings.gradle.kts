@@ -7,4 +7,5 @@ rootProject.name = "eddi"
 include("eddi-api")
 include("eddi-json")
 include("eddi-db")
+include("eddi-ksp")
 include("example")

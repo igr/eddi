@@ -5,7 +5,8 @@ import dev.oblac.eddi.*
 class DbEventStore : EventStoreInbox, EventStoreRepo {
 
     override fun <E : Event> storeEvent(correlationId: ULong, event: E): EventEnvelope<E> {
-        return dbStoreEvent(correlationId, event)
+        val meta = Events.metaOf(event)
+        return dbStoreEvent(correlationId, event, meta.refs(event))
     }
 
     private val eventProcessor = DbEventProcessor(processorId = 1L)

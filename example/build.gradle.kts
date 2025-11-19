@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    id("com.google.devtools.ksp")
     application
 }
 
@@ -11,4 +12,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
     implementation(project(":eddi-api"))
     implementation(project(":eddi-db"))
+    ksp(project(":eddi-ksp"))
 }
