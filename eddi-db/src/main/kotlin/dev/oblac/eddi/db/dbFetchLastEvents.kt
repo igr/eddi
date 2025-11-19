@@ -2,8 +2,8 @@ package dev.oblac.eddi.db
 
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.db.tables.Events
-import dev.oblac.eddi.db.tables.EventsOffsets
+import dev.oblac.eddi.db.tables.DbEvents
+import dev.oblac.eddi.db.tables.DbEventsOffsets
 import dev.oblac.eddi.db.tables.toEventEnvelope
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.max
@@ -19,22 +19,22 @@ data class UnpublishedEvents(
 
 fun dbFetchLastUnpublishedEvents(consumerId: Long, pageSize: Int = 1000): UnpublishedEvents = transaction {
     // 1. Read last published sequence
-    val lastSeq = EventsOffsets
-        .select(EventsOffsets.lastSequence)
-        .where { EventsOffsets.id eq consumerId }
+    val lastSeq = DbEventsOffsets
+        .select(DbEventsOffsets.lastSequence)
+        .where { DbEventsOffsets.id eq consumerId }
         .limit(1)
-        .singleOrNull()?.get(EventsOffsets.lastSequence) ?: 0u
+        .singleOrNull()?.get(DbEventsOffsets.lastSequence) ?: 0u
 
     // 2. Get latest event seq
-    val latestSeq = Events
-        .select(Events.sequence.max())
-        .single()[Events.sequence.max()] ?: lastSeq
+    val latestSeq = DbEvents
+        .select(DbEvents.sequence.max())
+        .single()[DbEvents.sequence.max()] ?: lastSeq
 
     // 3. Fetch next batch of events (paginated)
-    val events = Events
+    val events = DbEvents
         .selectAll()
-        .where { Events.sequence greater lastSeq }
-        .orderBy(Events.sequence, SortOrder.ASC)
+        .where { DbEvents.sequence greater lastSeq }
+        .orderBy(DbEvents.sequence, SortOrder.ASC)
         .limit(pageSize)
         .map { it.toEventEnvelope() }
 

@@ -10,8 +10,7 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.json.jsonb
 
-
-object Events : Table("events") {
+object DbEvents : Table("events") {
     val sequence = ulong("seq").autoIncrement()
     val correlationId = ulong("cid")
     val name = text("name")
@@ -30,10 +29,10 @@ object Events : Table("events") {
 
 fun ResultRow.toEventEnvelope(): EventEnvelope<Event> {
     return EventEnvelope(
-        sequence = this[Events.sequence],
-        correlationId = this[Events.correlationId],
-        event = this[Events.data],
-        eventName = EventName(this[Events.name]),
-        timestamp = this[Events.createdAt],
+        sequence = this[DbEvents.sequence],
+        correlationId = this[DbEvents.correlationId],
+        event = this[DbEvents.data],
+        eventName = EventName(this[DbEvents.name]),
+        timestamp = this[DbEvents.createdAt],
     )
 }

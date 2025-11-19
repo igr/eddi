@@ -3,7 +3,7 @@ package dev.oblac.eddi.db
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.Tag
-import dev.oblac.eddi.db.tables.Events
+import dev.oblac.eddi.db.tables.DbEvents
 import dev.oblac.eddi.db.tables.toEventEnvelope
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.andWhere
@@ -18,11 +18,11 @@ fun dbFindLastEventByTag(lastSequence: ULong, tag: Tag): EventEnvelope<Event>? =
 //        stringLiteral("id")
 //    )
 
-    Events
+    DbEvents
         .selectAll()
-        .where { Events.sequence lessEq lastSequence }
-        .andWhere { Events.name eq tag.name.value }
-        .orderBy(Events.sequence, SortOrder.DESC)
+        .where { DbEvents.sequence lessEq lastSequence }
+        .andWhere { DbEvents.name eq tag.name.value }
+        .orderBy(DbEvents.sequence, SortOrder.DESC)
         .limit(1)
         .singleOrNull()
         ?.toEventEnvelope()

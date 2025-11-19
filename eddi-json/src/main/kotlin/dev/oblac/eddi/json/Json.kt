@@ -12,6 +12,7 @@ import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventName
 import dev.oblac.eddi.Ref
 import dev.oblac.eddi.Tag
+import kotlin.reflect.KClass
 
 // Mix-in that tells Jackson to put the concrete class into a property.
 @JsonTypeInfo(
@@ -58,7 +59,6 @@ private class RefDeserializer : JsonDeserializer<Ref>() {
     }
 }
 
-
 object Json {
     private val tagModule = SimpleModule()
         .addSerializer(Tag::class.java, TagSerializer())
@@ -79,5 +79,8 @@ object Json {
 
     inline fun <reified T> fromJson(json: String): T =
         objectMapper.readValue(json, T::class.java)
+
+    fun <T : Any> fromJson(json: String, klass: KClass<T>): T =
+        objectMapper.readValue(json, klass.java)
 
 }

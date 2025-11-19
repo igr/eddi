@@ -1,22 +1,20 @@
 package dev.oblac.eddi.db
 
 import dev.oblac.eddi.*
-import dev.oblac.eddi.db.tables.Events
+import dev.oblac.eddi.db.tables.DbEvents
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
 
-fun <E : Event> dbStoreEvent(correlationId: ULong, event: E, refs: Array<Tag>): EventEnvelope<E> {
-    val eventName = event.eventName()
-
+fun <E : Event> dbStoreEvent(correlationId: ULong, event: E, eventName: EventName, refs: Array<Tag>): EventEnvelope<E> {
     val sequence = transaction {
-        Events.insert {
-            it[Events.correlationId] = correlationId
-            it[Events.name] = eventName.value
-            it[Events.data] = event
-            it[Events.tags] = refs.map { t -> Ref(t.name, t.seq) }.toTypedArray()
-            it[Events.createdAt] = Instant.now()
-        } get Events.sequence
+        DbEvents.insert {
+            it[DbEvents.correlationId] = correlationId
+            it[DbEvents.name] = eventName.value
+            it[DbEvents.data] = event
+            it[DbEvents.tags] = refs.map { t -> Ref(t.name, t.seq) }.toTypedArray()
+            it[DbEvents.createdAt] = Instant.now()
+        } get DbEvents.sequence
     }
 
     return EventEnvelope(
