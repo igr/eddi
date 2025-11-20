@@ -9,25 +9,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import dev.oblac.eddi.EventName
 import dev.oblac.eddi.Ref
-import dev.oblac.eddi.Tag
 import kotlin.reflect.KClass
-
-// Custom serializer for Tag interface - only serializes the seq field
-private class TagSerializer : JsonSerializer<Tag>() {
-    override fun serialize(value: Tag, gen: JsonGenerator, serializers: SerializerProvider) {
-        gen.writeNumber(value.seq.toLong())
-    }
-}
-
-// Custom deserializer for Tag interface - reads only the seq field
-private class TagDeserializer : JsonDeserializer<Tag>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Tag {
-        val seq = p.longValue.toULong()
-        return object : Tag {
-            override val seq: ULong = seq
-        }
-    }
-}
 
 private class RefSerializer : JsonSerializer<Ref>() {
     override fun serialize(value: Ref, gen: JsonGenerator, serializers: SerializerProvider) {
@@ -50,8 +32,6 @@ private class RefDeserializer : JsonDeserializer<Ref>() {
 
 object Json {
     private val tagModule = SimpleModule()
-        .addSerializer(Tag::class.java, TagSerializer())
-        .addDeserializer(Tag::class.java, TagDeserializer())
         .addSerializer(Ref::class.java, RefSerializer())
         .addDeserializer(Ref::class.java, RefDeserializer())
 

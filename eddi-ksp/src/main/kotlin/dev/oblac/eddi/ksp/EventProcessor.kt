@@ -17,7 +17,7 @@ class EventProcessor(
 
     companion object Companion {
         internal const val EVENT_INTERFACE_NAME = "dev.oblac.eddi.Event"
-        internal const val TAG_INTERFACE_NAME = "dev.oblac.eddi.TTag"
+        internal const val TAG_INTERFACE_NAME = "dev.oblac.eddi.Tag"
     }
 
     private val processedEventClasses = mutableSetOf<String>()
@@ -56,7 +56,7 @@ class EventProcessor(
             }
         }
 
-        // Detect all TTag implementations and collect class names with TTag generic
+        // Detect all Tag implementations and collect class names with Tag generic
         val tagInterface = resolver.getClassDeclarationByName(
             resolver.getKSNameFromString(TAG_INTERFACE_NAME)
         )
@@ -78,7 +78,7 @@ class EventProcessor(
             tagImplementationsList.forEach { tagClass ->
                 val tagClassName = tagClass.qualifiedName?.asString()
 
-                // Extract the generic type from TTag<EventType>
+                // Extract the generic type from Tag<EventType>
                 val genericEventType = tagClass.superTypes
                     .firstOrNull { superType ->
                         val resolvedType = superType.resolve()
@@ -95,7 +95,7 @@ class EventProcessor(
 
                 if (tagClassName != null && genericEventType != null) {
                     tagImplementations[tagClassName] = genericEventType
-                    logger.info("Detected TTag implementation: $tagClassName with generic type $genericEventType")
+                    logger.info("Detected Tag implementation: $tagClassName with generic type $genericEventType")
                 }
             }
         }

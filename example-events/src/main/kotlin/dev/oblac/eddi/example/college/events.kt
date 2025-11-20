@@ -2,13 +2,13 @@ package dev.oblac.eddi.example.college
 
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.TTag
+import dev.oblac.eddi.Tag
 import java.time.Instant
 
 // --- student ---
 
 @JvmInline
-value class StudentRegisteredTag(override val seq: ULong) : TTag<StudentRegistered>
+value class StudentRegisteredTag(override val seq: ULong) : Tag<StudentRegistered>
 
 @JvmName("studentRegisteredRef")
 fun EventEnvelope<StudentRegistered>.tag(): StudentRegisteredTag {
@@ -25,7 +25,7 @@ data class StudentRegistered(
 // --- tuition ---
 
 @JvmInline
-value class TuitionPaidTag(override val seq: ULong) : TTag<TuitionPaid>
+value class TuitionPaidTag(override val seq: ULong) : Tag<TuitionPaid>
 
 @JvmName("tuitionPaidRef")
 fun EventEnvelope<TuitionPaid>.tag(): TuitionPaidTag {
@@ -42,7 +42,7 @@ data class TuitionPaid(
 
 
 @JvmInline
-value class CoursePublishedTag(override val seq: ULong) : TTag<CoursePublished>
+value class CoursePublishedTag(override val seq: ULong) : Tag<CoursePublished>
 
 @JvmName("coursePublishedRef")
 fun EventEnvelope<CoursePublished>.tag(): CoursePublishedTag {
@@ -58,7 +58,7 @@ data class CoursePublished(
 ) : Event
 
 @JvmInline
-value class EnrolledTag(override val seq: ULong) : TTag<Enrolled>
+value class EnrolledTag(override val seq: ULong) : Tag<Enrolled>
 
 data class Enrolled(
     val tuitionPaid: TuitionPaidTag,
