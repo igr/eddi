@@ -27,11 +27,9 @@ fun main() {
             is PublishCourse -> publishCourse(eventStoreInbox, command) {
                 coursePublishedId = it
             }
-
             is PayTuition -> payTuition(eventStoreInbox, command) {
                 tuitionPaidId = it
             }
-
             is EnrollInCourse -> enrollInCourse(eventStoreInbox, command)
             is GradeStudent -> gradeStudent(eventStoreInbox, command)
         }
@@ -39,44 +37,40 @@ fun main() {
 
     val runCommand = runCommand(commandHandler)
 
-    val eventHandler: EventListener = {
-        when (val event = it.event) {
-            is StudentRegistered -> studentRegistered(event)
-            is CoursePublished -> coursePublished(event)
-            is TuitionPaid -> tuitionPaid(event)
-            else -> {}
-        }
+    val eventHandler: EventListener = { ee ->
+        ee.onEvent<StudentRegistered> { studentRegistered(it.event) }
+        ee.onEvent<CoursePublished> { coursePublished(it.event) }
+        ee.onEvent<TuitionPaid> { tuitionPaid(it.event) }
     }
 
-    // real logic
-    val eventListener: EventListener = {
-        println("📢 Event received: ${it.event}")
-        it.onEvent<StudentRegistered> { e ->
+    val eventListener: EventListener = { ee ->
+        println("📢 Event received: ${ee.event}")
+        ee.onEvent<StudentRegistered> {
             runCommand(
-                PayTuition(e.tag(), 1500.0, "Fall 2024")
+                PayTuition(it.tag(), 1500.0, "Fall 2024")
             )
         }
-        it.onEvent<CoursePublished> { e ->
-            val tuitionPaid = eventStore.findLastEventByTagBefore(e.sequence, TuitionPaidTag(tuitionPaidId?: 0uL))
+        ee.onEvent<CoursePublished> {
+            val tuitionPaid = eventStore.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId?: 0uL))
             if (tuitionPaid != null) {
                 runCommand(
-                    EnrollInCourse(tuitionPaid.tag(), CoursePublishedTag(it.sequence))
+                    EnrollInCourse(tuitionPaid.tag(), CoursePublishedTag(ee.sequence))
                 )
             }
         }
-        it.onEvent<TuitionPaid> { e ->
-            val coursePublished = eventStore.findLastEventByTagBefore(e.sequence, CoursePublishedTag(coursePublishedId ?: 0u))
+        ee.onEvent<TuitionPaid> {
+            val coursePublished = eventStore.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: 0u))
             if (coursePublished != null) {
                 runCommand(
-                    EnrollInCourse(TuitionPaidTag(e.sequence), coursePublished.tag())
+                    EnrollInCourse(TuitionPaidTag(it.sequence), coursePublished.tag())
                 )
             }
         }
-        it.onEvent<Enrolled> { e ->
-            runCommand(GradeStudent(e.tag(), "A"))
+        ee.onEvent<Enrolled> {
+            runCommand(GradeStudent(it.tag(), "A"))
         }
-        it.onEvent<Graded> { e ->
-            println("✅ Student graded: ${e.event} -> ${e.event.grade}")
+        ee.onEvent<Graded> {
+            println("✅ Student graded: ${it.event} -> ${it.event.grade}")
         }
     }
 
@@ -84,9 +78,9 @@ fun main() {
     val dispatcher = dispatchEvent + eventListener + Projections    // todo projections ARE INDEPENDENT!!!!!!!!!!!
     eventStore.startInbox { dispatcher(it) }
 
+    /* RUN */
     runCommand(RegisterStudent("John", "Doe", "john@foo.com"))
     runCommand(PublishCourse("Intro to Programming", "Dr. Smith", 3))
-
     readln()
 }
 

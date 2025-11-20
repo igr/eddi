@@ -6,6 +6,15 @@ import java.util.*
 
 internal fun capitalize(str: String) = str.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 
+internal fun simpleClassNameOf(qualifiedName: String): String {
+    val lastDotIndex = qualifiedName.lastIndexOf('.')
+    return if (lastDotIndex != -1 && lastDotIndex < qualifiedName.length - 1) {
+        qualifiedName.substring(lastDotIndex + 1)
+    } else {
+        qualifiedName
+    }
+}
+
 internal fun tagPropertiesOfRecord(eventClass: KSClassDeclaration): List<String> =
     (eventClass.primaryConstructor?.parameters
         ?.filter { param ->
