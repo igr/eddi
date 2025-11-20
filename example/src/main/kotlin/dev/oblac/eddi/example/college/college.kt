@@ -5,7 +5,6 @@ import dev.oblac.eddi.db.Db
 import dev.oblac.eddi.db.DbEventStore
 import dev.oblac.eddi.meta.EventsRegistry
 
-
 fun main() {
     // we need to register events before using the event store
     EventsRegistry.init()
@@ -58,24 +57,18 @@ fun main() {
             )
         }
         it.onEvent<CoursePublished> { e ->
-            val tuitionPaid = eventStore.findLastEventByTagBefore(e.tag(), TuitionPaidTag(tuitionPaidId?: 0uL))
+            val tuitionPaid = eventStore.findLastEventByTagBefore(e.sequence, TuitionPaidTag(tuitionPaidId?: 0uL))
             if (tuitionPaid != null) {
                 runCommand(
-                    EnrollInCourse(
-                        (tuitionPaid as EventEnvelope<TuitionPaid>).tag(),
-                        CoursePublishedTag(it.sequence)
-                    )
+                    EnrollInCourse(tuitionPaid.tag(), CoursePublishedTag(it.sequence))
                 )
             }
         }
         it.onEvent<TuitionPaid> { e ->
-            val coursePublished = eventStore.findLastEventByTagBefore(e.tag(), CoursePublishedTag(coursePublishedId ?: 0u))
+            val coursePublished = eventStore.findLastEventByTagBefore(e.sequence, CoursePublishedTag(coursePublishedId ?: 0u))
             if (coursePublished != null) {
                 runCommand(
-                    EnrollInCourse(
-                        TuitionPaidTag(e.sequence),
-                        (coursePublished as EventEnvelope<CoursePublished>).tag()
-                    )
+                    EnrollInCourse(TuitionPaidTag(e.sequence), coursePublished.tag())
                 )
             }
         }
