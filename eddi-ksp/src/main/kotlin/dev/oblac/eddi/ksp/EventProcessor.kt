@@ -50,6 +50,7 @@ class EventProcessor(
             .toList()
 
         eventImplementations.forEach { tagClass ->
+            logger.info("Processing event class: ${tagClass.qualifiedName?.asString()}")
             val qualifiedName = tagClass.qualifiedName?.asString() ?: return@forEach
             if (qualifiedName !in processedEventClasses) {
                 processedEventClasses.add(qualifiedName)
@@ -118,9 +119,7 @@ class EventProcessor(
         targetClassName: String,
         tagPropertiesOfEvent: List<String>
     ) {
-        val tagNames = tagPropertiesOfEvent
-            .map { "event.$it" }
-            .joinToString(", ") { it }
+        val tagNames = tagPropertiesOfEvent.joinToString(", ") { "event.$it" }
 
         writer.write(
             """

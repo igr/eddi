@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college
 
-import dev.oblac.eddi.Command
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.Tag
@@ -88,39 +87,3 @@ data class Graded(
     val gradedAt: Instant = Instant.now()
 ) : Event
 
-/** Corresponding Commands **/
-
-sealed interface AppCommand : Command
-
-data class RegisterStudent(
-    val firstName: String,
-    val lastName: String,
-    val email: String
-) : AppCommand
-
-data class PayTuition(
-    val student: StudentRegisteredTag,
-    val amount: Double,
-    val semester: String
-) : AppCommand
-
-data class EnrollInCourse(
-    val tuitionPaid: TuitionPaidTag,
-    val course: CoursePublishedTag,
-) : AppCommand
-
-data class PublishCourse(
-    val courseName: String,
-    val instructor: String,
-    val credits: Int
-) : AppCommand
-
-data class GradeStudent(
-    val enrolled: EnrolledTag,
-    val grade: String
-) : AppCommand
-
-data class DeregisterStudent(
-    val student: StudentRegisteredTag,
-    val reason: String? = null
-) : Command
