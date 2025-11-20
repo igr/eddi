@@ -1,6 +1,5 @@
 package dev.oblac.eddi.json
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.*
@@ -8,19 +7,10 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventName
 import dev.oblac.eddi.Ref
 import dev.oblac.eddi.Tag
 import kotlin.reflect.KClass
-
-// Mix-in that tells Jackson to put the concrete class into a property.
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.CLASS,
-    include = JsonTypeInfo.As.PROPERTY,
-    property = "@event"
-)
-private interface EventMixIn
 
 // Custom serializer for Tag interface - only serializes the seq field
 private class TagSerializer : JsonSerializer<Tag>() {
@@ -72,15 +62,23 @@ object Json {
         .registerKotlinModule()
         .registerModule(tagModule)
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .addMixIn(Event::class.java, EventMixIn::class.java)
 
     fun <T> toJson(value: T): String =
         objectMapper.writeValueAsString(value)
+
+    fun <T> fromNode(node: JsonNode, clazz: Class<T>): T =
+        objectMapper.treeToValue(node, clazz)
+
+    fun toNode(json: String): JsonNode =
+        objectMapper.readTree(json)
 
     inline fun <reified T> fromJson(json: String): T =
         objectMapper.readValue(json, T::class.java)
 
     fun <T : Any> fromJson(json: String, klass: KClass<T>): T =
         objectMapper.readValue(json, klass.java)
+
+    fun toNode(value: Any): JsonNode =
+        objectMapper.valueToTree(value)
 
 }

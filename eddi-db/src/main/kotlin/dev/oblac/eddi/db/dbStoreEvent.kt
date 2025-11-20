@@ -2,6 +2,7 @@ package dev.oblac.eddi.db
 
 import dev.oblac.eddi.*
 import dev.oblac.eddi.db.tables.DbEvents
+import dev.oblac.eddi.json.Json
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
@@ -11,7 +12,7 @@ fun <E : Event> dbStoreEvent(correlationId: ULong, event: E, eventName: EventNam
         DbEvents.insert {
             it[DbEvents.correlationId] = correlationId
             it[DbEvents.name] = eventName.value
-            it[DbEvents.data] = event
+            it[DbEvents.data] = Json.toNode(event)
             it[DbEvents.tags] = refs.map { t -> Ref(t.name, t.seq) }.toTypedArray()
             it[DbEvents.createdAt] = Instant.now()
         } get DbEvents.sequence
