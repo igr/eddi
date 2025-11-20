@@ -75,8 +75,10 @@ fun main() {
     }
 
     val dispatchEvent = dispatchEvent(eventHandler)
-    val dispatcher = dispatchEvent + eventListener + Projections    // todo projections ARE INDEPENDENT!!!!!!!!!!!
+    val dispatcher = dispatchEvent + eventListener
     eventStore.startInbox { dispatcher(it) }
+
+    Projections.start()
 
     /* RUN */
     runCommand(RegisterStudent("John", "Doe", "john@foo.com"))

@@ -3,6 +3,7 @@ package dev.oblac.eddi.example.college
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventListener
+import dev.oblac.eddi.db.DbEventProcessor
 
 data class StudentView(
     val id: ULong,
@@ -16,6 +17,7 @@ data class CourseView(
 )
 
 object Projections : EventListener {
+    private val dbEventProcessor = DbEventProcessor(100L)
     val students = mutableMapOf<ULong, StudentView>()
     val courses = mutableMapOf<ULong, CourseView>()
 
@@ -37,5 +39,9 @@ object Projections : EventListener {
         }
     }
 
+    fun start() {
+        dbEventProcessor.startInbox(this)
+        println("🚀 Projections started")
+    }
 
 }
