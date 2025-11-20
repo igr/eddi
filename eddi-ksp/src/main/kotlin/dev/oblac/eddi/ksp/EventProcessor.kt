@@ -16,17 +16,15 @@ class EventProcessor(
 ) : SymbolProcessor {
 
     companion object Companion {
-        private const val EVENT_INTERFACE_NAME = "dev.oblac.eddi.Event"
-        private const val TAG_INTERFACE_NAME = "dev.oblac.eddi.Tag"
+        internal const val EVENT_INTERFACE_NAME = "dev.oblac.eddi.Event"
+        internal const val TAG_INTERFACE_NAME = "dev.oblac.eddi.TTag"
     }
 
     private val processedEventClasses = mutableSetOf<String>()
-    private var processed = false
+    private val eventClasses = mutableSetOf<KSClassDeclaration>()
+    private val tagImplementations = mutableMapOf<String, String>() // Map of TagClass -> EventType
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        if (processed) {
-            return emptyList()
-        }
         val eventInterface = resolver.getClassDeclarationByName(
             resolver.getKSNameFromString(EVENT_INTERFACE_NAME)
         )
@@ -58,31 +56,56 @@ class EventProcessor(
             }
         }
 
+        // Detect all TTag implementations and collect class names with TTag generic
+        val tagInterface = resolver.getClassDeclarationByName(
+            resolver.getKSNameFromString(TAG_INTERFACE_NAME)
+        )
+
+        if (tagInterface != null) {
+            val tagImplementationsList = resolver.getNewFiles()
+                .flatMap { it.declarations }
+                .filterIsInstance<KSClassDeclaration>()
+                .filter { classDeclaration ->
+                    classDeclaration.superTypes.any { superType ->
+                        val resolvedType = superType.resolve()
+                        val declaration = resolvedType.declaration
+                        declaration.qualifiedName?.asString() == TAG_INTERFACE_NAME
+                    }
+                }
+                .filter { it.validate() }
+                .toList()
+
+            tagImplementationsList.forEach { tagClass ->
+                val tagClassName = tagClass.qualifiedName?.asString()
+
+                // Extract the generic type from TTag<EventType>
+                val genericEventType = tagClass.superTypes
+                    .firstOrNull { superType ->
+                        val resolvedType = superType.resolve()
+                        resolvedType.declaration.qualifiedName?.asString() == TAG_INTERFACE_NAME
+                    }
+                    ?.resolve()
+                    ?.arguments
+                    ?.firstOrNull()
+                    ?.type
+                    ?.resolve()
+                    ?.declaration
+                    ?.qualifiedName
+                    ?.asString()
+
+                if (tagClassName != null && genericEventType != null) {
+                    tagImplementations[tagClassName] = genericEventType
+                    logger.info("Detected TTag implementation: $tagClassName with generic type $genericEventType")
+                }
+            }
+        }
+
         return emptyList()
     }
 
     override fun finish() {
-        if (processedEventClasses.isNotEmpty()) {
-            generateEventRegistry(processedEventClasses)
-        }
-    }
-
-    private fun generateEventRegistry(processedEventClasses: Set<String>) {
-        val file = env.codeGenerator.createNewFile(
-            dependencies = Dependencies(aggregating = true),
-            packageName = "dev.oblac.eddi.meta",
-            fileName = "EventsRegistry"
-        )
-
-        file.write(
-            """
-            package dev.oblac.eddi.meta
-
-            object EventsRegistry {
-                val items = listOf(${processedEventClasses.map{it + "Event"}.joinToString { it }})
-            }
-            """.trimIndent().toByteArray()
-        )
+        eventClasses.forEach { generateEventCode(it) }
+        generateEventRegistry(processedEventClasses)
     }
 
     private fun generateEventCode(eventClass: KSClassDeclaration) {
@@ -119,7 +142,10 @@ class EventProcessor(
         targetClassName: String,
         tagPropertiesOfEvent: List<String>
     ) {
-        val tagNames = tagPropertiesOfEvent.joinToString(", ") { "event.$it" }
+
+        val refCtors = tagPropertiesOfEvent.joinToString(", ") {
+            "dev.oblac.eddi.Events.refOf(event.$it)"
+        }
 
         writer.write(
             """
@@ -134,28 +160,42 @@ class EventProcessor(
                 |object $targetClassName: dev.oblac.eddi.EventMeta<$className> {
                 |    
                 |    override val CLASS = $className::class
-                |    override val NAME = EventName.of(CLASS)
+                |    override val NAME = EventName.of(CLASS) 
                 |    
-                |    override fun refs(event: $className): Array<dev.oblac.eddi.Tag> =
-                |        arrayOf($tagNames)
+                |    override fun refs(event: $className): Array<dev.oblac.eddi.Ref> =
+                |        arrayOf($refCtors)
                 |}
             """.trimMargin()
         )
     }
 
-    /**
-     * Filters the properties of the event record that implement the Tag interface.
-     */
-    private fun tagPropertiesOfRecord(eventClass: KSClassDeclaration): List<String> =
-        (eventClass.primaryConstructor?.parameters
-            ?.filter { param ->
-                val paramType = param.type.resolve()
-                val declaration = paramType.declaration
-                declaration.qualifiedName?.asString() == TAG_INTERFACE_NAME ||
-                        (declaration as? KSClassDeclaration)?.superTypes?.any { superType ->
-                            superType.resolve().declaration.qualifiedName?.asString() == "dev.oblac.eddi.Tag"
-                        } == true
+    private fun generateEventRegistry(processedEventClasses: Set<String>) {
+        val file = env.codeGenerator.createNewFile(
+            dependencies = Dependencies(aggregating = true),
+            packageName = "dev.oblac.eddi.meta",
+            fileName = "EventsRegistry"
+        )
+
+        val tagsRegister = "\n" + tagImplementations.map { (tagClass, eventType) ->
+            "dev.oblac.eddi.Events.register($tagClass::class, ${eventType}Event.NAME)"
+        }.joinToString("\n")
+
+        file.write(
+            """
+            package dev.oblac.eddi.meta
+
+            object EventsRegistry { 
+                fun init() {
+                    // Register EventMeta implementations
+                    dev.oblac.eddi.Events.register(
+                        listOf(${processedEventClasses.map { it + "Event" }.joinToString { it }})
+                    )
+                    // Register Tag implementations
+                    $tagsRegister
+                }
             }
-            ?.mapNotNull { it.name?.asString() }
-            ?: emptyList())
+            """.trimIndent().toByteArray()
+        )
+    }
+
 }

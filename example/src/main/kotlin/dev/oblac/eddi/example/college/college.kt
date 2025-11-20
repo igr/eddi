@@ -8,7 +8,7 @@ import dev.oblac.eddi.meta.EventsRegistry
 
 fun main() {
     // we need to register events before using the event store
-    Events.register(EventsRegistry.items)
+    EventsRegistry.init()
 
     val db = Db(
         jdbcUrl = "jdbc:postgresql://localhost:7432/eddi",

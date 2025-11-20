@@ -5,6 +5,7 @@ import kotlin.reflect.KClass
 object Events {
     private val klassToMeta = mutableMapOf<KClass<out Event>, EventMeta<out Event>>()
     private val nameToMeta = mutableMapOf<EventName, EventMeta<out Event>>()
+    private val klassToName = mutableMapOf<KClass<out TTag<Event>>, EventName>()
 
     fun register(events: List<EventMeta<out Event>>) {
         events.forEach {
@@ -13,12 +14,21 @@ object Events {
         }
     }
 
+    fun register(klass: KClass<out TTag<Event>>, eventName: EventName) {
+        klassToName[klass] = eventName
+    }
+
     @Suppress("UNCHECKED_CAST")
     fun <E : Event> metaOf(event: E): EventMeta<E> =
         klassToMeta[event::class] as? EventMeta<E> ?: error("Event ${event::class.simpleName} is not registered")
 
     fun metaOf(name: EventName): EventMeta<out Event> =
         nameToMeta[name] ?: error("Event with name '${name.value}' is not registered")
+
+    fun refOf(tag: TTag<Event>): Ref {
+        val name = klassToName[tag::class] ?: error("Tag ${tag::class.simpleName} is not registered")
+        return Ref(name, tag.seq)
+    }
 }
 
 /**
@@ -27,5 +37,5 @@ object Events {
 interface EventMeta<E: Event> {
     val CLASS: KClass<out Event>
     val NAME: EventName
-    fun refs(event: E): Array<Tag>
+    fun refs(event: E): Array<Ref>
 }

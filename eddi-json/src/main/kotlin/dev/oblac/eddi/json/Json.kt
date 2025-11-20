@@ -24,7 +24,6 @@ private class TagDeserializer : JsonDeserializer<Tag>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Tag {
         val seq = p.longValue.toULong()
         return object : Tag {
-            override val name: EventName get() = throw UnsupportedOperationException("Cannot access name during deserialization")
             override val seq: ULong = seq
         }
     }

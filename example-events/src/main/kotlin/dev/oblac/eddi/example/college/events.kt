@@ -2,16 +2,13 @@ package dev.oblac.eddi.example.college
 
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.Tag
+import dev.oblac.eddi.TTag
 import java.time.Instant
-
 
 // --- student ---
 
 @JvmInline
-value class StudentRegisteredTag(override val seq: ULong) : Tag {
-    override val name get() = StudentRegisteredEvent.NAME
-}
+value class StudentRegisteredTag(override val seq: ULong) : TTag<StudentRegistered>
 
 @JvmName("studentRegisteredRef")
 fun EventEnvelope<StudentRegistered>.tag(): StudentRegisteredTag {
@@ -28,9 +25,7 @@ data class StudentRegistered(
 // --- tuition ---
 
 @JvmInline
-value class TuitionPaidTag(override val seq: ULong) : Tag {
-    override val name get() = TuitionPaidEvent.NAME
-}
+value class TuitionPaidTag(override val seq: ULong) : TTag<TuitionPaid>
 
 @JvmName("tuitionPaidRef")
 fun EventEnvelope<TuitionPaid>.tag(): TuitionPaidTag {
@@ -47,9 +42,7 @@ data class TuitionPaid(
 
 
 @JvmInline
-value class CoursePublishedTag(override val seq: ULong) : Tag {
-    override val name get() = CoursePublishedEvent.NAME
-}
+value class CoursePublishedTag(override val seq: ULong) : TTag<CoursePublished>
 
 @JvmName("coursePublishedRef")
 fun EventEnvelope<CoursePublished>.tag(): CoursePublishedTag {
@@ -65,9 +58,7 @@ data class CoursePublished(
 ) : Event
 
 @JvmInline
-value class EnrolledTag(override val seq: ULong) : Tag {
-    override val name get() = EnrolledEvent.NAME
-}
+value class EnrolledTag(override val seq: ULong) : TTag<Enrolled>
 
 data class Enrolled(
     val tuitionPaid: TuitionPaidTag,
@@ -80,7 +71,6 @@ fun EventEnvelope<Enrolled>.tag(): EnrolledTag {
     return EnrolledTag(this.sequence)
 }
 
-// Grading event - depends on both Enrolled and CoursePublished
 data class Graded(
     val enrolled: EnrolledTag,
     val grade: String, // A, B, C, D, F
