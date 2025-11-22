@@ -1,37 +1,28 @@
 package dev.oblac.eddi.example.college
 
 import dev.oblac.eddi.*
-import dev.oblac.eddi.db.Db
 import dev.oblac.eddi.db.DbEventStore
-import dev.oblac.eddi.meta.EventsRegistry
 
 fun main() {
-    // we need to register events before using the event store
-    EventsRegistry.init()
+    init()
 
-    val db = Db(
-        jdbcUrl = "jdbc:postgresql://localhost:7432/eddi",
-        username = "eddi_user",
-        password = "eddi_password"
-    )
-
-    val eventStore = DbEventStore()
-    val eventStoreInbox = eventStore as EventStoreInbox
+    val es = DbEventStore()
+    val esInbox = es as EventStoreInbox
 
     var coursePublishedId: ULong? = null
     var tuitionPaidId: ULong? = null
 
     val runCommand: CommandHandler = { cmd ->
         when (val command = cmd as AppCommand) {
-            is RegisterStudent -> registerStudent(eventStoreInbox, command)
-            is PublishCourse -> publishCourse(eventStoreInbox, command) {
+            is RegisterStudent -> registerStudent(esInbox, command)
+            is PublishCourse -> publishCourse(esInbox, command) {
                 coursePublishedId = it
             }
-            is PayTuition -> payTuition(eventStoreInbox, command) {
+            is PayTuition -> payTuition(esInbox, command) {
                 tuitionPaidId = it
             }
-            is EnrollInCourse -> enrollInCourse(eventStoreInbox, command)
-            is GradeStudent -> gradeStudent(eventStoreInbox, command)
+            is EnrollInCourse -> enrollInCourse(esInbox, command)
+            is GradeStudent -> gradeStudent(esInbox, command)
         }
     }
 
@@ -49,7 +40,7 @@ fun main() {
             )
         }
         ee.onEvent<CoursePublished> {
-            val tuitionPaid = eventStore.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId?: 0uL))
+            val tuitionPaid = es.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId?: 0uL))
             if (tuitionPaid != null) {
                 runCommand(
                     EnrollInCourse(tuitionPaid.tag(), CoursePublishedTag(ee.sequence))
@@ -57,7 +48,7 @@ fun main() {
             }
         }
         ee.onEvent<TuitionPaid> {
-            val coursePublished = eventStore.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: 0u))
+            val coursePublished = es.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: 0u))
             if (coursePublished != null) {
                 runCommand(
                     EnrollInCourse(TuitionPaidTag(it.sequence), coursePublished.tag())
@@ -73,7 +64,7 @@ fun main() {
     }
 
     val dispatcher = eventHandler + eventListener
-    eventStore.startInbox { dispatcher(it) }
+    es.startInbox { dispatcher(it) }
 
     Projections.start()
 
