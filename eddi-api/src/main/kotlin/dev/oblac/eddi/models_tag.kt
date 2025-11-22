@@ -1,14 +1,14 @@
 package dev.oblac.eddi
 
 /**
- * Interface for event tags.
+ * Event tags.
  */
 interface Tag<out Event> {
     val seq: ULong
 }
 
 /**
- * Reference to an event.
+ * Untyped reference to an event.
  */
 data class Ref(
     val name: EventName,

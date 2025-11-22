@@ -21,7 +21,7 @@ fun main() {
     var coursePublishedId: ULong? = null
     var tuitionPaidId: ULong? = null
 
-    val commandHandler: CommandHandler = { cmd ->
+    val runCommand: CommandHandler = { cmd ->
         when (val command = cmd as AppCommand) {
             is RegisterStudent -> registerStudent(eventStoreInbox, command)
             is PublishCourse -> publishCourse(eventStoreInbox, command) {
@@ -34,8 +34,6 @@ fun main() {
             is GradeStudent -> gradeStudent(eventStoreInbox, command)
         }
     }
-
-    val runCommand = runCommand(commandHandler)
 
     val eventHandler: EventListener = { ee ->
         ee.onEvent<StudentRegistered> { studentRegistered(it.event) }
@@ -74,8 +72,7 @@ fun main() {
         }
     }
 
-    val dispatchEvent = dispatchEvent(eventHandler)
-    val dispatcher = dispatchEvent + eventListener
+    val dispatcher = eventHandler + eventListener
     eventStore.startInbox { dispatcher(it) }
 
     Projections.start()
