@@ -25,3 +25,4 @@ ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.re
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "2.2.0" }
+shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }

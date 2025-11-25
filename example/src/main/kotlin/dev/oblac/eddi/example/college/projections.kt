@@ -8,7 +8,8 @@ import dev.oblac.eddi.db.DbEventProcessor
 data class StudentView(
     val id: ULong,
     val name: String,
-    var tuitionPaid: Boolean = false
+    var tuitionPaid: Boolean = false,
+    val courses: MutableList<ULong> = mutableListOf()
 )
 
 data class CourseView(

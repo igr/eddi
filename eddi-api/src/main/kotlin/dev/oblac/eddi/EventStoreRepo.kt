@@ -1,6 +1,5 @@
 package dev.oblac.eddi
 
-
 interface EventStoreRepo {
 
     /**
