@@ -15,7 +15,7 @@ class DbEventStore : EventStoreInbox, EventStoreRepo {
         eventProcessor.startInbox(eventListener)
     }
 
-    override fun <T: Event> findLastEventByTagBefore(lastEvent: ULong, tagToFind: Tag<T>): EventEnvelope<T>? {
+    override fun <T: Event> findLastEventByTagBefore(lastEvent: Seq, tagToFind: Tag<T>): EventEnvelope<T>? {
         val targetRef = Events.refOf(tagToFind)
         return dbFindLastEventByTag(lastEvent, targetRef) as EventEnvelope<T>?
     }

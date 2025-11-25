@@ -1,9 +1,6 @@
 package dev.oblac.eddi.db
 
-import dev.oblac.eddi.Event
-import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.EventName
-import dev.oblac.eddi.Ref
+import dev.oblac.eddi.*
 import dev.oblac.eddi.db.tables.DbEvents
 import dev.oblac.eddi.json.Json
 import org.jetbrains.exposed.sql.insert
@@ -22,7 +19,7 @@ fun <E : Event> dbStoreEvent(correlationId: ULong, event: E, eventName: EventNam
     }
 
     return EventEnvelope(
-        sequence = sequence,
+        sequence = Seq(sequence),
         correlationId = correlationId,
         event = event,
         eventName = eventName,

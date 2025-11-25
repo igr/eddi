@@ -3,24 +3,25 @@ package dev.oblac.eddi.example.college
 import dev.oblac.eddi.Event
 import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventListener
+import dev.oblac.eddi.Seq
 import dev.oblac.eddi.db.DbEventProcessor
 
 data class StudentView(
-    val id: ULong,
+    val id: Seq,
     val name: String,
     var tuitionPaid: Boolean = false,
-    val courses: MutableList<ULong> = mutableListOf()
+    val courses: MutableList<Seq> = mutableListOf()
 )
 
 data class CourseView(
-    val id: ULong,
+    val id: Seq,
     val courseName: String,
 )
 
 object Projections : EventListener {
     private val dbEventProcessor = DbEventProcessor(100L)
-    val students = mutableMapOf<ULong, StudentView>()
-    val courses = mutableMapOf<ULong, CourseView>()
+    val students = mutableMapOf<Seq, StudentView>()
+    val courses = mutableMapOf<Seq, CourseView>()
 
     override fun invoke(ee: EventEnvelope<Event>) {
         when (val event = ee.event) {

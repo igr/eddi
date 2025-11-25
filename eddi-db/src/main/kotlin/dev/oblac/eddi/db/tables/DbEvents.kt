@@ -32,7 +32,7 @@ fun ResultRow.toEventEnvelope(): EventEnvelope<Event> {
     val event = Json.fromNode(node, klass.java)
 
     return EventEnvelope(
-        sequence = this[DbEvents.sequence],
+        sequence = Seq(this[DbEvents.sequence]),
         correlationId = this[DbEvents.correlationId],
         event = event,
         eventName = eventName,

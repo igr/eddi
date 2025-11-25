@@ -9,8 +9,8 @@ fun main() {
     val es = DbEventStore()
     val esInbox = es as EventStoreInbox
 
-    var coursePublishedId: ULong? = null
-    var tuitionPaidId: ULong? = null
+    var coursePublishedId: Seq? = null
+    var tuitionPaidId: Seq? = null
 
     val runCommand: CommandHandler = { cmd ->
         when (val command = cmd as AppCommand) {
@@ -40,7 +40,7 @@ fun main() {
             )
         }
         ee.onEvent<CoursePublished> {
-            val tuitionPaid = es.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId?: 0uL))
+            val tuitionPaid = es.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId ?: Seq.ZERO))
             if (tuitionPaid != null) {
                 runCommand(
                     EnrollInCourse(tuitionPaid.tag(), CoursePublishedTag(ee.sequence))
@@ -48,7 +48,7 @@ fun main() {
             }
         }
         ee.onEvent<TuitionPaid> {
-            val coursePublished = es.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: 0u))
+            val coursePublished = es.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: Seq.ZERO))
             if (coursePublished != null) {
                 runCommand(
                     EnrollInCourse(TuitionPaidTag(it.sequence), coursePublished.tag())
@@ -89,7 +89,7 @@ fun studentRegistered(event: StudentRegistered) {
     println("${System.currentTimeMillis()} 🎉 Student registered with ID: $event")
 }
 
-fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, consumeId: (ULong) -> Unit) {
+fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, consumeId: (Seq) -> Unit) {
     println("${System.currentTimeMillis()} 🔥 Publishing course: ${command.courseName}")
     val e = inbox.storeEvent(
         0u,
@@ -106,7 +106,7 @@ fun coursePublished(event: CoursePublished) {
     println("${System.currentTimeMillis()} 🎉 Course published with ID: $event")
 }
 
-fun payTuition(inbox: EventStoreInbox, command: PayTuition, consumeId: (ULong) -> Unit) {
+fun payTuition(inbox: EventStoreInbox, command: PayTuition, consumeId: (Seq) -> Unit) {
     println("${System.currentTimeMillis()} 🔥 Processing tuition payment for student: ${command.student}")
     val e = inbox.storeEvent(
         0u,

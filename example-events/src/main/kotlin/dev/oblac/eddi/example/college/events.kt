@@ -1,11 +1,12 @@
 package dev.oblac.eddi.example.college
 
 import dev.oblac.eddi.Event
+import dev.oblac.eddi.Seq
 import dev.oblac.eddi.Tag
 import java.time.Instant
 
 @JvmInline
-value class StudentRegisteredTag(override val seq: ULong) : Tag<StudentRegistered>
+value class StudentRegisteredTag(override val seq: Seq) : Tag<StudentRegistered>
 
 data class StudentRegistered(
     val firstName: String,
@@ -16,7 +17,7 @@ data class StudentRegistered(
 
 
 @JvmInline
-value class TuitionPaidTag(override val seq: ULong) : Tag<TuitionPaid>
+value class TuitionPaidTag(override val seq: Seq) : Tag<TuitionPaid>
 
 data class TuitionPaid(
     val student: StudentRegisteredTag,
@@ -27,7 +28,7 @@ data class TuitionPaid(
 
 
 @JvmInline
-value class CoursePublishedTag(override val seq: ULong) : Tag<CoursePublished>
+value class CoursePublishedTag(override val seq: Seq) : Tag<CoursePublished>
 
 data class CoursePublished(
     val courseName: String,
@@ -37,7 +38,7 @@ data class CoursePublished(
 ) : Event
 
 @JvmInline
-value class EnrolledTag(override val seq: ULong) : Tag<Enrolled>
+value class EnrolledTag(override val seq: Seq) : Tag<Enrolled>
 
 data class Enrolled(
     val tuitionPaid: TuitionPaidTag,

@@ -4,7 +4,7 @@ package dev.oblac.eddi
  * Event tags.
  */
 interface Tag<out Event> {
-    val seq: ULong
+    val seq: Seq
 }
 
 /**
@@ -12,5 +12,5 @@ interface Tag<out Event> {
  */
 data class Ref(
     val name: EventName,
-    val seq: ULong
+    val seq: Seq
 )

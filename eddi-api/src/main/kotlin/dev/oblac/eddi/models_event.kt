@@ -3,6 +3,22 @@ package dev.oblac.eddi
 import java.time.Instant
 import kotlin.reflect.KClass
 
+/**
+ * Sequence number.
+ */
+@JvmInline
+value class Seq(val value: ULong) {
+    fun toLong() = value.toLong()
+    companion object Companion {
+        val ZERO = Seq(0u)
+        fun of(value: ULong) = Seq(value)
+        fun of(value: Long) = Seq(value.toULong())
+    }
+}
+
+fun Long.toSeq() = Seq.of(this)
+
+
 @JvmInline
 value class EventName(val value: String) {
     companion object Companion {
@@ -19,7 +35,7 @@ interface Event
  * Stored event.
  */
 data class EventEnvelope<E : Event>(
-    val sequence: ULong,
+    val sequence: Seq,
     val correlationId: ULong,   // todo add CorrelationId value type
     val event: E,
     val eventName: EventName,

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import dev.oblac.eddi.EventName
 import dev.oblac.eddi.Ref
+import dev.oblac.eddi.toSeq
 import kotlin.reflect.KClass
 
 private class RefSerializer : JsonSerializer<Ref>() {
@@ -25,7 +26,7 @@ private class RefDeserializer : JsonDeserializer<Ref>() {
         val field = node.fields().next()
         return Ref(
             name = EventName(field.key),
-            seq = field.value.asLong().toULong()
+            seq = field.value.asLong().toSeq()
         )
     }
 }
