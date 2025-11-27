@@ -49,7 +49,7 @@ object Json {
     fun <T> fromNode(node: JsonNode, clazz: Class<T>): T =
         objectMapper.treeToValue(node, clazz)
 
-    fun toNode(json: String): JsonNode =
+    fun jsonToNode(json: String): JsonNode =
         objectMapper.readTree(json)
 
     inline fun <reified T> fromJson(json: String): T =
@@ -58,7 +58,7 @@ object Json {
     fun <T : Any> fromJson(json: String, klass: KClass<T>): T =
         objectMapper.readValue(json, klass.java)
 
-    fun toNode(value: Any): JsonNode =
+    fun valueToNode(value: Any): JsonNode =
         objectMapper.valueToTree(value)
 
 }

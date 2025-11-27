@@ -8,14 +8,18 @@ application {
     mainClass.set("dev.oblac.eddi.example.college.MainKt")
 }
 
+tasks.register("printClasspath") {
+    doLast {
+        println(sourceSets["main"].runtimeClasspath.asPath)
+    }
+}
+
 dependencies {
-    implementation(libs.kotlinx.coroutines)
     implementation(project(":eddi-api"))
+    implementation(project(":eddi-json"))
     implementation(project(":eddi-db"))
     implementation(project(":example-events"))
-
-    val mordantVersion = "3.0.2"
-    implementation("com.github.ajalt.mordant:mordant:${mordantVersion}")
-    implementation("com.github.ajalt.mordant:mordant-coroutines:${mordantVersion}")
-    implementation("com.github.ajalt.mordant:mordant-markdown:${mordantVersion}")
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.html.builder)
 }

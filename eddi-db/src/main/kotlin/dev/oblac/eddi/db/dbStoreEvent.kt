@@ -12,7 +12,7 @@ fun <E : Event> dbStoreEvent(correlationId: ULong, event: E, eventName: EventNam
         DbEvents.insert {
             it[DbEvents.correlationId] = correlationId
             it[DbEvents.name] = eventName.value
-            it[DbEvents.data] = Json.toNode(event)
+            it[DbEvents.data] = Json.valueToNode(event)
             it[DbEvents.tags] = refs
             it[DbEvents.createdAt] = Instant.now()
         } get DbEvents.sequence

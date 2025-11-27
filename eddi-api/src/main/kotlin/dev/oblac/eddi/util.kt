@@ -4,7 +4,7 @@ package dev.oblac.eddi
  * Executes the given [block] if the event in this [EventEnvelope] is of type [E].
  * Utility function for type-safe event handling.
  */
-inline fun <reified E : Event> EventEnvelope<*>.onEvent(
+inline fun <reified E : Event> EventEnvelope<*>.invoke(
     crossinline block: (EventEnvelope<E>) -> Unit
 ) {
     val e = this.event
@@ -14,9 +14,7 @@ inline fun <reified E : Event> EventEnvelope<*>.onEvent(
 /**
  * Combines two [EventListener]s into one that executes both in sequence.
  */
-operator fun EventListener.plus(
-    listener: EventListener
-): EventListener = { envelope ->
-    this(envelope)
-    listener(envelope)
+operator fun EventListener.plus(listener: EventListener) = EventListener { envelope ->
+    this.invoke(envelope)
+    listener.invoke(envelope)
 }

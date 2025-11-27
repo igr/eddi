@@ -14,7 +14,7 @@ object DbEvents : Table("events") {
     val name = text("name")
     val data = jsonb("data",
         { Json.toJson(it) },
-        { Json.toNode(it) }
+        { Json.jsonToNode(it) }
     )
     val tags = jsonb("tags",
         { Json.toJson(it) },

@@ -6,6 +6,7 @@ interface EventStoreInbox {
      * Stores the given event associated with the provided correlation ID.
      * Returns an EventEnvelope containing metadata about the stored event.
      */
-    fun <E: Event> storeEvent(correlationId: ULong, event: E): EventEnvelope<E>
+    fun <E: Event> storeEvent(event: E, correlationId: ULong = 0u): EventEnvelope<E>
+
 
 }
