@@ -6,6 +6,8 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun dbFindEventsByName(name: String, filters: Map<String, String> = mapOf()) = transaction {
+    addLogger(StdOutSqlLogger)
+
     var query = DbEvents
         .selectAll()
         .where { DbEvents.name eq name }

@@ -24,11 +24,6 @@ infra-reset:
     docker volume rm eddi_postgres_data
     @just infra-up
 
-run-all:
-    ./gradlew :example:shadowJar
-    clear
-    java -jar example/build/libs/example-1.0.0-SNAPSHOT-all.jar
-
 run:
     ./gradlew :example:classes
     clear

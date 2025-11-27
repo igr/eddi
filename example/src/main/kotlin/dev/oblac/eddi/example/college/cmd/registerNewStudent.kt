@@ -14,7 +14,7 @@ fun registerNewStudent(es: EventStore, command: RegisterStudent) {
     studentsWithSameEmail(es, command.email)
         .firstOrNull()
         ?.let {
-            // Student with this email already registered, do not register again.
+            println("Student with this email already registered, do not register again.")
             return
         }
 

@@ -24,7 +24,7 @@ fun Routing.apiStudents() {
 
         Main.commands.launch(
             RegisterStudent(
-                firstName, lastName, "$firstName.$lastName@college.edu"
+                firstName, lastName, "${firstName.lowercase()}.${lastName.lowercase()}@college.edu"
             )
         )
 
