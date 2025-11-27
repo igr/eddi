@@ -20,4 +20,8 @@ class DbEventStore : EventStore {
         return dbFindLastEventByTag(lastEvent, targetRef) as EventEnvelope<T>?
     }
 
+    override fun <T: Event> findEvents(name: EventName, dataFilters: Map<String, String>): List<EventEnvelope<T>> {
+        return dbFindEventsByName(name.value, dataFilters) as List<EventEnvelope<T>>
+    }
+
 }

@@ -12,13 +12,6 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun dbFindLastEventByTag(lastSequence: Seq, ref: Ref): EventEnvelope<Event>? = transaction {
-//    val jsonExtractId = CustomFunction<String?>(
-//        functionName = "jsonb_extract_path_text",
-//        columnType = TextColumnType(),
-//        Events.data,
-//        stringLiteral("id")
-//    )
-
     DbEvents
         .selectAll()
         .where { DbEvents.sequence lessEq lastSequence.value }

@@ -1,15 +1,22 @@
 package dev.oblac.eddi.example.college.cmd
 
+import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventStore
 import dev.oblac.eddi.example.college.RegisterStudent
 import dev.oblac.eddi.example.college.StudentRegistered
+import dev.oblac.eddi.example.college.StudentRegisteredEvent
 
 /**
  * Registers a new student.
  */
 fun registerNewStudent(es: EventStore, command: RegisterStudent) {
 
-    //es.findEvent(StudentRegistered::class)
+    studentsWithSameEmail(es, command.email)
+        .firstOrNull()
+        ?.let {
+            // Student with this email already registered, do not register again.
+            return
+        }
 
     es.storeEvent(
         StudentRegistered(
@@ -19,3 +26,9 @@ fun registerNewStudent(es: EventStore, command: RegisterStudent) {
         )
     )
 }
+
+private fun studentsWithSameEmail(
+    es: EventStore,
+    email: String
+): List<EventEnvelope<StudentRegistered>> =
+    es.findEvents(StudentRegisteredEvent.NAME, mapOf("email" to email))

@@ -4,8 +4,6 @@ import dev.oblac.eddi.*
 import dev.oblac.eddi.db.DbEventStore
 
 fun main() {
-    init()
-
     val es = DbEventStore()
     val esInbox = es as EventStoreInbox
 
