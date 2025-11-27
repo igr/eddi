@@ -7,6 +7,4 @@ interface EventStoreInbox {
      * Returns an EventEnvelope containing metadata about the stored event.
      */
     fun <E: Event> storeEvent(event: E, correlationId: ULong = 0u): EventEnvelope<E>
-
-
 }
