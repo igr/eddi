@@ -1,41 +1,39 @@
 package dev.oblac.eddi.example.college.cmd
 
 import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import dev.oblac.eddi.CommandError
-import dev.oblac.eddi.EventEnvelope
-import dev.oblac.eddi.EventStore
-import dev.oblac.eddi.Seq
 import dev.oblac.eddi.example.college.RegisterStudent
-import dev.oblac.eddi.example.college.StudentAlreadyRegistered
 import dev.oblac.eddi.example.college.StudentRegistered
-import dev.oblac.eddi.example.college.StudentRegisteredEvent
+
+object RegisterNewStudentError : CommandError {
+    override fun toString(): String = "Student with this email already exists"
+}
 
 /**
  * Registers a new student.
  */
-fun registerNewStudent(es: EventStore, command: RegisterStudent): Either<CommandError, Seq> {
-    studentsWithSameEmail(es, command.email)
-        .firstOrNull()
-        ?.let {
-            println("Student with this email already registered, do not register again.")
-            return StudentAlreadyRegistered(command.email).left()
+fun registerNewStudent(
+    emailExists: (String) -> Boolean,
+    command: RegisterStudent
+): Either<CommandError, StudentRegistered> =
+    uniqueStudentEmail(emailExists, command.email)
+        .map {
+            StudentRegistered(
+                firstName = command.firstName,
+                lastName = command.lastName,
+                email = command.email
+            )
         }
 
-    val ee = es.storeEvent(
-        StudentRegistered(
-            firstName = command.firstName,
-            lastName = command.lastName,
-            email = command.email
-        )
-    )
 
-    return ee.sequence.right()
-}
-
-private fun studentsWithSameEmail(
-    es: EventStore,
+private fun uniqueStudentEmail(
+    emailExists: (String) -> Boolean,
     email: String
-): List<EventEnvelope<StudentRegistered>> =
-    es.findEvents(StudentRegisteredEvent.NAME, mapOf("email" to email))
+): Either<RegisterNewStudentError, Unit> = either {
+    ensure(!emailExists(email)) {
+        println("Student with email $email already exists")
+        RegisterNewStudentError
+    }
+}

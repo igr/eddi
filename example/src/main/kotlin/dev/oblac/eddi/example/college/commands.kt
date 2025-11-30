@@ -11,7 +11,16 @@ import dev.oblac.eddi.example.college.cmd.registerNewStudent
  */
 fun commandHandler(es: EventStore) = commandHandler { command ->
     when (command) {
-        is RegisterStudent -> registerNewStudent(es, command)
+        is RegisterStudent -> registerNewStudent(
+            emailExists = { email ->
+                es.findEvents<StudentRegistered>(
+                    StudentRegisteredEvent.NAME,
+                    mapOf("email" to email)
+                ).isNotEmpty()
+            }, command
+        ).map {
+            es.storeEvent(it)
+        }
         else -> {
             println("Unknown command: $command")
             Either.Left(UnknownCommandError(command))
