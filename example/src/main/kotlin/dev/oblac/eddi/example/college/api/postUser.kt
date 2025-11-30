@@ -41,7 +41,7 @@ fun Routing.apiStudents() {
                 )
             },
             ifRight = {
-                call.respondText(Json.toJson(StudentResponse(it)), ContentType.Text.Plain, HttpStatusCode.Accepted)
+                call.respondText(Json.toJson(StudentResponse(it)), ContentType.Application.Json, HttpStatusCode.Accepted)
             }
         )
     }
