@@ -27,15 +27,6 @@ class TxCommandHandler<R>(
 /**
  * Extension function to wrap a CommandHandler in a transaction.
  * This applies transaction management as an effect to the handler.
- *
- * Example:
- * ```
- * val handler = studentHandler
- *     .asContext()
- *     .map { it.id }
- *     .build()
- *     .tx()  // Wrap in transaction
- * ```
  */
 fun <R> CommandHandler<R>.tx(): TxCommandHandler<R> =
     TxCommandHandler(this)
