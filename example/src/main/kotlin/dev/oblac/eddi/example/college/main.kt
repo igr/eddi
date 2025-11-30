@@ -1,7 +1,9 @@
 package dev.oblac.eddi.example.college
 
+import dev.oblac.eddi.async
 import dev.oblac.eddi.db.Db
 import dev.oblac.eddi.db.DbEventStore
+import dev.oblac.eddi.db.tx
 import dev.oblac.eddi.meta.EventsRegistry
 
 fun main() {
@@ -26,7 +28,7 @@ fun main() {
 object Main {
     val es = DbEventStore()
 
-    val commands = asyncCommands(es)
+    val launch = commandHandler(es).tx().async()
 
     fun hello() {
         println("Hello, College Example App!")

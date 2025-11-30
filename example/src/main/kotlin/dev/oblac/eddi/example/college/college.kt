@@ -33,14 +33,14 @@ fun main() {
     val eventListener = EventListener { ee ->
         println("📢 Event received: ${ee.event}")
         ee.invoke<StudentRegistered> {
-            runCommand<Unit>(
+            runCommand(
                 PayTuition(it.tag(), 1500.0, "Fall 2024")
             )
         }
         ee.invoke<CoursePublished> {
             val tuitionPaid = es.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId ?: Seq.ZERO))
             if (tuitionPaid != null) {
-                runCommand<Unit>(
+                runCommand(
                     EnrollInCourse(tuitionPaid.tag(), CoursePublishedTag(ee.sequence))
                 )
             }
@@ -48,13 +48,13 @@ fun main() {
         ee.invoke<TuitionPaid> {
             val coursePublished = es.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: Seq.ZERO))
             if (coursePublished != null) {
-                runCommand<Unit>(
+                runCommand(
                     EnrollInCourse(TuitionPaidTag(it.sequence), coursePublished.tag())
                 )
             }
         }
         ee.invoke<Enrolled> {
-            runCommand<Unit>(GradeStudent(it.tag(), "A"))
+            runCommand(GradeStudent(it.tag(), "A"))
         }
         ee.invoke<Graded> {
             println("✅ Student graded: ${it.event} -> ${it.event.grade}")
@@ -67,8 +67,8 @@ fun main() {
     Projections.start()
 
     /* RUN */
-    runCommand<Unit>(RegisterStudent("John", "Doe", "john@foo.com"))
-    runCommand<Unit>(PublishCourse("Intro to Programming", "Dr. Smith", 3))
+    runCommand(RegisterStudent("John", "Doe", "john@foo.com"))
+    runCommand(PublishCourse("Intro to Programming", "Dr. Smith", 3))
     readln()
 }
 

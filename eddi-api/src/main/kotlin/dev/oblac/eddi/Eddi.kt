@@ -1,48 +1,53 @@
 package dev.oblac.eddi
 
 import arrow.core.Either
+import arrow.core.right
 import kotlinx.coroutines.*
+import java.util.*
 
 fun interface EventListener {
     operator fun invoke(envelope: EventEnvelope<Event>)
 }
 
-interface CommandHandler {
-    operator fun <R> invoke(command: Command): Either<CommandError, R>
+interface CommandHandler<R> {
+    operator fun invoke(command: Command): Either<CommandError, R>
 }
+
+class AsyncCommandHandler<R>(
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val target: CommandHandler<R>
+) : CommandHandler<UUID> {
+    private val jobs = mutableMapOf<UUID, Job>()
+
+    override fun invoke(command: Command): Either<CommandError, UUID> {
+        val job = CoroutineScope(dispatcher).launch {
+            target.invoke(command)
+        }
+        val jobId = UUID.randomUUID()
+        jobs[jobId] = job
+        job.invokeOnCompletion {
+            // todo we should have timeout mechanism to clean up old jobs
+            jobs.remove(jobId)
+        }
+        return jobId.right()
+    }
+}
+
+
+/// Helpers
 
 /**
  * Creates a [CommandHandler] from a lambda.
  */
-fun commandHandler(handler: (Command) -> Either<CommandError, *>): CommandHandler = object : CommandHandler {
-    override fun <R> invoke(command: Command): Either<CommandError, R> {
-        @Suppress("UNCHECKED_CAST")
-        return handler(command) as Either<CommandError, R>
+fun <R> commandHandler(handler: (Command) -> Either<CommandError, R>): CommandHandler<R> = object : CommandHandler<R> {
+    override fun invoke(command: Command): Either<CommandError, R> {
+        return handler(command)
     }
 }
-
-interface AsyncCommandHandler {
-    suspend operator fun <R> invoke(command: Command): Either<CommandError, R>
-
-    fun launch(command: Command, dispatcher: CoroutineDispatcher = Dispatchers.Default) {
-        CoroutineScope(dispatcher).launch {
-            this@AsyncCommandHandler<Any>(command)
-        }
-    }
-}
-
 
 /**
- * Wraps a synchronous [CommandHandler] to create an [AsyncCommandHandler]
- * that executes commands on the specified [dispatcher].
+ * Extension function to apply async execution effect to a CommandHandler.
+ * Wraps the handler in an AsyncCommandHandler that executes commands asynchronously.
  */
-fun asyncCommandHandler(
-    dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    handler: CommandHandler
-): AsyncCommandHandler = object : AsyncCommandHandler {
-    override suspend fun <R> invoke(command: Command): Either<CommandError, R> =
-        withContext(dispatcher) {
-            handler(command)
-        }
-}
-
+fun <R> CommandHandler<R>.async(dispatcher: CoroutineDispatcher = Dispatchers.Default): AsyncCommandHandler<R> =
+    AsyncCommandHandler(dispatcher, this)

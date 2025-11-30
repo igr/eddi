@@ -22,7 +22,7 @@ fun Routing.apiStudents() {
         val firstName = node.firstName
         val lastName = node.lastName
 
-        Main.commands.launch(
+        val result = Main.launch(
             RegisterStudent(
                 firstName, lastName, "${firstName.lowercase()}.${lastName.lowercase()}@college.edu"
             )
