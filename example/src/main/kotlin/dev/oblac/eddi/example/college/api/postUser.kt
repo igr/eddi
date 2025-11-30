@@ -7,10 +7,16 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.util.*
 
 data class StudentRequest(
     val firstName: String,
     val lastName: String
+)
+
+// todo names are wrong
+data class StudentResponse(
+    val uuid: UUID,
 )
 
 fun Routing.apiStudents() {
@@ -22,12 +28,21 @@ fun Routing.apiStudents() {
         val firstName = node.firstName
         val lastName = node.lastName
 
-        val result = Main.launch(
+        Main.launch(
             RegisterStudent(
                 firstName, lastName, "${firstName.lowercase()}.${lastName.lowercase()}@college.edu"
             )
+        ).fold(
+            ifLeft = {
+                call.respondText(
+                    "Error: error",
+                    ContentType.Text.Plain,
+                    HttpStatusCode.BadRequest
+                )
+            },
+            ifRight = {
+                call.respondText(Json.toJson(StudentResponse(it)), ContentType.Text.Plain, HttpStatusCode.Accepted)
+            }
         )
-
-        call.respondText("Accepted", ContentType.Text.Plain, HttpStatusCode.Accepted)
     }
 }
