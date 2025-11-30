@@ -10,7 +10,7 @@ fun main() {
     var coursePublishedId: Seq? = null
     var tuitionPaidId: Seq? = null
 
-    val runCommand = CommandHandler { cmd ->
+    val runCommand = commandHandler { cmd ->
         when (val command = cmd as AppCommand) {
             is RegisterStudent -> registerStudent(esInbox, command)
             is PublishCourse -> publishCourse(esInbox, command) {
@@ -33,14 +33,14 @@ fun main() {
     val eventListener = EventListener { ee ->
         println("📢 Event received: ${ee.event}")
         ee.invoke<StudentRegistered> {
-            runCommand(
+            runCommand<Unit>(
                 PayTuition(it.tag(), 1500.0, "Fall 2024")
             )
         }
         ee.invoke<CoursePublished> {
             val tuitionPaid = es.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId ?: Seq.ZERO))
             if (tuitionPaid != null) {
-                runCommand(
+                runCommand<Unit>(
                     EnrollInCourse(tuitionPaid.tag(), CoursePublishedTag(ee.sequence))
                 )
             }
@@ -48,13 +48,13 @@ fun main() {
         ee.invoke<TuitionPaid> {
             val coursePublished = es.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: Seq.ZERO))
             if (coursePublished != null) {
-                runCommand(
+                runCommand<Unit>(
                     EnrollInCourse(TuitionPaidTag(it.sequence), coursePublished.tag())
                 )
             }
         }
         ee.invoke<Enrolled> {
-            runCommand(GradeStudent(it.tag(), "A"))
+            runCommand<Unit>(GradeStudent(it.tag(), "A"))
         }
         ee.invoke<Graded> {
             println("✅ Student graded: ${it.event} -> ${it.event.grade}")
@@ -67,12 +67,12 @@ fun main() {
     Projections.start()
 
     /* RUN */
-    runCommand(RegisterStudent("John", "Doe", "john@foo.com"))
-    runCommand(PublishCourse("Intro to Programming", "Dr. Smith", 3))
+    runCommand<Unit>(RegisterStudent("John", "Doe", "john@foo.com"))
+    runCommand<Unit>(PublishCourse("Intro to Programming", "Dr. Smith", 3))
     readln()
 }
 
-fun registerStudent(inbox: EventStoreInbox, command: RegisterStudent) {
+fun registerStudent(inbox: EventStoreInbox, command: RegisterStudent): arrow.core.Either<CommandError, Unit> {
     println("${System.currentTimeMillis()} 🔥 Registering student: ${command.firstName} ${command.lastName}")
     inbox.storeEvent(
         StudentRegistered(
@@ -81,13 +81,14 @@ fun registerStudent(inbox: EventStoreInbox, command: RegisterStudent) {
             email = command.email
         )
     )
+    return arrow.core.Either.Right(Unit)
 }
 
 fun studentRegistered(event: StudentRegistered) {
     println("${System.currentTimeMillis()} 🎉 Student registered with ID: $event")
 }
 
-fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, consumeId: (Seq) -> Unit) {
+fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, consumeId: (Seq) -> Unit): arrow.core.Either<CommandError, Unit> {
     println("${System.currentTimeMillis()} 🔥 Publishing course: ${command.courseName}")
     val e = inbox.storeEvent(
         CoursePublished(
@@ -97,13 +98,14 @@ fun publishCourse(inbox: EventStoreInbox, command: PublishCourse, consumeId: (Se
         )
     )
     consumeId(e.sequence)
+    return arrow.core.Either.Right(Unit)
 }
 
 fun coursePublished(event: CoursePublished) {
     println("${System.currentTimeMillis()} 🎉 Course published with ID: $event")
 }
 
-fun payTuition(inbox: EventStoreInbox, command: PayTuition, consumeId: (Seq) -> Unit) {
+fun payTuition(inbox: EventStoreInbox, command: PayTuition, consumeId: (Seq) -> Unit): arrow.core.Either<CommandError, Unit> {
     println("${System.currentTimeMillis()} 🔥 Processing tuition payment for student: ${command.student}")
     val e = inbox.storeEvent(
         TuitionPaid(
@@ -113,13 +115,14 @@ fun payTuition(inbox: EventStoreInbox, command: PayTuition, consumeId: (Seq) -> 
         )
     )
     consumeId(e.sequence)
+    return arrow.core.Either.Right(Unit)
 }
 
 fun tuitionPaid(event: TuitionPaid) {
     println("${System.currentTimeMillis()} 🎉 Tuition paid with ID: $event for amount: ${event.amount}")
 }
 
-fun enrollInCourse(inbox: EventStoreInbox, command: EnrollInCourse) {
+fun enrollInCourse(inbox: EventStoreInbox, command: EnrollInCourse): arrow.core.Either<CommandError, Unit> {
     println("${System.currentTimeMillis()} 🔥 Enrolling student ${command.tuitionPaid} in course ${command.course}")
     inbox.storeEvent(
         Enrolled(
@@ -127,9 +130,10 @@ fun enrollInCourse(inbox: EventStoreInbox, command: EnrollInCourse) {
             course = command.course
         )
     )
+    return arrow.core.Either.Right(Unit)
 }
 
-fun gradeStudent(inbox: EventStoreInbox, command: GradeStudent) {
+fun gradeStudent(inbox: EventStoreInbox, command: GradeStudent): arrow.core.Either<CommandError, Unit> {
     println("${System.currentTimeMillis()} 🔥 Grading ${command.grade}")
     inbox.storeEvent(
         Graded(
@@ -137,6 +141,7 @@ fun gradeStudent(inbox: EventStoreInbox, command: GradeStudent) {
             grade = command.grade
         )
     )
+    return arrow.core.Either.Right(Unit)
 }
 
 //fun deregisterStudent(command: DeregisterStudent): Array<StudentDeregistered> {

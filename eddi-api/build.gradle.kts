@@ -3,5 +3,6 @@ plugins {
 }
 dependencies {
     api(libs.kotlinx.coroutines)
+    api(libs.arrow.core)
     runtimeOnly(libs.kotlin.reflect)
 }

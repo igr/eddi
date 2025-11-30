@@ -1,21 +1,32 @@
 package dev.oblac.eddi
 
+import arrow.core.Either
 import kotlinx.coroutines.*
 
 fun interface EventListener {
     operator fun invoke(envelope: EventEnvelope<Event>)
 }
 
-fun interface CommandHandler {
-    operator fun invoke(command: Command)
+interface CommandHandler {
+    operator fun <R> invoke(command: Command): Either<CommandError, R>
 }
 
-fun interface AsyncCommandHandler {
-    suspend operator fun invoke(command: Command)
+/**
+ * Creates a [CommandHandler] from a lambda.
+ */
+fun commandHandler(handler: (Command) -> Either<CommandError, *>): CommandHandler = object : CommandHandler {
+    override fun <R> invoke(command: Command): Either<CommandError, R> {
+        @Suppress("UNCHECKED_CAST")
+        return handler(command) as Either<CommandError, R>
+    }
+}
+
+interface AsyncCommandHandler {
+    suspend operator fun <R> invoke(command: Command): Either<CommandError, R>
 
     fun launch(command: Command, dispatcher: CoroutineDispatcher = Dispatchers.Default) {
         CoroutineScope(dispatcher).launch {
-            this@AsyncCommandHandler(command)
+            this@AsyncCommandHandler<Any>(command)
         }
     }
 }
@@ -28,9 +39,10 @@ fun interface AsyncCommandHandler {
 fun asyncCommandHandler(
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     handler: CommandHandler
-) = AsyncCommandHandler { command ->
-    withContext(dispatcher) {
-        handler(command)
-    }
+): AsyncCommandHandler = object : AsyncCommandHandler {
+    override suspend fun <R> invoke(command: Command): Either<CommandError, R> =
+        withContext(dispatcher) {
+            handler(command)
+        }
 }
 
