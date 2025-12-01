@@ -13,14 +13,14 @@ fun main() {
     // register events before using the event store
     EventsRegistry.init()
 
-    // Database connection
+    // Database connection with separate schemas for each module
     val db = Db(
         jdbcUrl = "jdbc:postgresql://localhost:7432/eddi",
         username = "eddi_user",
         password = "eddi_password",
         migrations = listOf(
-            MigrationConfig("classpath:db/migration/core", "flyway_schema_history_eddi"),   // todo add it as default in the Db class
-            MigrationConfig("classpath:db/migration/example", "flyway_schema_history_example")
+            MigrationConfig(schema = "eddi"),      // Core eddi-db migrations
+            MigrationConfig(schema = "college")    // Example college migrations
         )
     )
 

@@ -6,7 +6,8 @@ import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
 
 data class MigrationConfig(
-    val location: String,
+    val schema: String,
+    val location: String = "classpath:db/migration/$schema",
     val tableName: String = "flyway_schema_history"
 )
 
@@ -15,7 +16,7 @@ class Db(
     username: String,
     password: String,
     maximumPoolSize: Int = 10,
-    migrations: List<MigrationConfig> = listOf(MigrationConfig("classpath:db/migration/core"))
+    migrations: List<MigrationConfig> = listOf(MigrationConfig(schema = "eddi"))
 ) {
     private val dataSource: HikariDataSource
 
@@ -38,6 +39,7 @@ class Db(
         migrations.forEach { migrationConfig ->
             val flyway = Flyway.configure()
                 .dataSource(dataSource)
+                .schemas(migrationConfig.schema)
                 .locations(migrationConfig.location)
                 .table(migrationConfig.tableName)
                 .load()

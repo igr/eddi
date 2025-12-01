@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.json.jsonb
 
-object DbEvents : Table("events") {
+object DbEvents : Table("eddi.events") {
     val sequence = ulong("seq").autoIncrement()
     val correlationId = ulong("cid")
     val name = text("name")

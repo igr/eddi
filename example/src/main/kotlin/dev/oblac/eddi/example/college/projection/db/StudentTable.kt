@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.timestamp
 import java.util.*
 
-object StudentTable : Table("student") {
+object StudentTable : Table("college.student") {
     val id = uuid("id").autoGenerate().clientDefault { UUID.randomUUID() }
     val seq = ulong("seq").references(DbEvents.sequence)
     val firstName = text("first_name")

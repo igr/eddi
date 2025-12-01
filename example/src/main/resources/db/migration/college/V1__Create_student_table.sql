@@ -1,10 +1,12 @@
+
+
 ---
 --- Student table.
 ---
-CREATE TABLE IF NOT EXISTS student
+CREATE TABLE IF NOT EXISTS college.student
 (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    seq           BIGINT      NOT NULL REFERENCES events (seq),
+    seq           BIGINT      NOT NULL REFERENCES eddi.events (seq),
     first_name    TEXT        NOT NULL,
     last_name     TEXT        NOT NULL,
     email         TEXT        NOT NULL UNIQUE,
@@ -14,9 +16,9 @@ CREATE TABLE IF NOT EXISTS student
 ---
 --- Add index on student.seq for faster event sequence lookups.
 ---
-CREATE INDEX IF NOT EXISTS idx_student_seq ON student (seq);
+CREATE INDEX IF NOT EXISTS idx_student_seq ON college.student (seq);
 
 ---
 --- Add index on student.email for faster email lookups.
 ---
-CREATE INDEX IF NOT EXISTS idx_student_email ON student (email);
+CREATE INDEX IF NOT EXISTS idx_student_email ON college.student (email);
