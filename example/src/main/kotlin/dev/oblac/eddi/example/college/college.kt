@@ -25,19 +25,19 @@ fun main() {
     }
 
     val eventHandler = EventListener { ee ->
-        ee.invoke<StudentRegistered> { studentRegistered(it.event) }
-        ee.invoke<CoursePublished> { coursePublished(it.event) }
-        ee.invoke<TuitionPaid> { tuitionPaid(it.event) }
+        ee.on<StudentRegistered> { studentRegistered(it.event) }
+        ee.on<CoursePublished> { coursePublished(it.event) }
+        ee.on<TuitionPaid> { tuitionPaid(it.event) }
     }
 
     val eventListener = EventListener { ee ->
         println("📢 Event received: ${ee.event}")
-        ee.invoke<StudentRegistered> {
+        ee.on<StudentRegistered> {
             runCommand(
                 PayTuition(it.tag(), 1500.0, "Fall 2024")
             )
         }
-        ee.invoke<CoursePublished> {
+        ee.on<CoursePublished> {
             val tuitionPaid = es.findLastEventByTagBefore(it.sequence, TuitionPaidTag(tuitionPaidId ?: Seq.ZERO))
             if (tuitionPaid != null) {
                 runCommand(
@@ -45,7 +45,7 @@ fun main() {
                 )
             }
         }
-        ee.invoke<TuitionPaid> {
+        ee.on<TuitionPaid> {
             val coursePublished = es.findLastEventByTagBefore(it.sequence, CoursePublishedTag(coursePublishedId ?: Seq.ZERO))
             if (coursePublished != null) {
                 runCommand(
@@ -53,10 +53,10 @@ fun main() {
                 )
             }
         }
-        ee.invoke<Enrolled> {
+        ee.on<Enrolled> {
             runCommand(GradeStudent(it.tag(), "A"))
         }
-        ee.invoke<Graded> {
+        ee.on<Graded> {
             println("✅ Student graded: ${it.event} -> ${it.event.grade}")
         }
     }

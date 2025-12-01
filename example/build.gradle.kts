@@ -22,4 +22,7 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.html.builder)
+
+    implementation(libs.bundles.exposed)
+    implementation(libs.bundles.flyway)
 }

@@ -5,11 +5,17 @@ import com.zaxxer.hikari.HikariDataSource
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
 
+data class MigrationConfig(
+    val location: String,
+    val tableName: String = "flyway_schema_history"
+)
+
 class Db(
     jdbcUrl: String,
     username: String,
     password: String,
-    maximumPoolSize: Int = 10
+    maximumPoolSize: Int = 10,
+    migrations: List<MigrationConfig> = listOf(MigrationConfig("classpath:db/migration/core"))
 ) {
     private val dataSource: HikariDataSource
 
@@ -28,13 +34,16 @@ class Db(
         dataSource = HikariDataSource(config)
         Database.connect(dataSource)
 
-        // Run Flyway migrations
-        val flyway = Flyway.configure()
-            .dataSource(dataSource)
-            .locations("classpath:db/migration")
-            .load()
+        // Run Flyway migrations for each module independently
+        migrations.forEach { migrationConfig ->
+            val flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations(migrationConfig.location)
+                .table(migrationConfig.tableName)
+                .load()
 
-        flyway.migrate()
+            flyway.migrate()
+        }
     }
 
     fun close() {
