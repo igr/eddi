@@ -13,7 +13,7 @@ fun Routing.pageIndex() {
                     h1 { +"College Management System" }
                     p { +"This is a simple Ktor application with HTML templating." }
                     div("menu") {
-                        a(href = "/users.html") { +"List Users" }
+                        a(href = "/students.html") { +"List Students" }
                     }
                     div("menu") {
                         a(href = "/add-student.html") { +"Add a Student" }

@@ -59,6 +59,22 @@ fun HEAD.style() {
                 font-weight: bold;
                 color: #d32f2f;
             }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            table, th, td {
+                border: 1px solid #ddd;
+            }
+            th, td {
+                padding: 12px;
+                text-align: left;
+            }
+            th {
+                background-color: #4CAF50;
+                color: white;
+            }            
         """.trimIndent()
     }
 }
