@@ -4,8 +4,8 @@ import io.ktor.server.html.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
 
-fun Routing.pageAddStudent() {
-    get("/add-student.html") {
+fun Routing.pageStudentAdd() {
+    get("/student-add.html") {
         call.respondHtml {
             head()
             body {

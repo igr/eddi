@@ -1,8 +1,10 @@
 package dev.oblac.eddi.example.college
 
+import dev.oblac.eddi.example.college.api.apiStudent
 import dev.oblac.eddi.example.college.api.apiStudents
-import dev.oblac.eddi.example.college.ui.pageAddStudent
 import dev.oblac.eddi.example.college.ui.pageIndex
+import dev.oblac.eddi.example.college.ui.pageStudentAdd
+import dev.oblac.eddi.example.college.ui.pageStudentEdit
 import dev.oblac.eddi.example.college.ui.pageStudents
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -19,7 +21,9 @@ fun Application.configureRouting() {
     routing {
         pageIndex()
         pageStudents()
-        pageAddStudent()
+        pageStudentAdd()
+        pageStudentEdit()
         apiStudents()
+        apiStudent()
     }
 }

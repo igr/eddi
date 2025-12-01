@@ -21,6 +21,7 @@ fun Routing.pageStudents() {
                                 th { +"Last Name" }
                                 th { +"Email" }
                                 th { +"Registered At" }
+                                th { +"Actions" }
                             }
                         }
                         tbody {
@@ -30,6 +31,9 @@ fun Routing.pageStudents() {
                                     td { +student.lastName }
                                     td { +student.email }
                                     td { +student.registeredAt.toString() }
+                                    td {
+                                        a(href = "/student-edit.html?id=${student.id}") { +"Edit" }
+                                    }
                                 }
                             }
                         }

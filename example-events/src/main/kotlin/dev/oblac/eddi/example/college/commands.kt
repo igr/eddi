@@ -12,6 +12,12 @@ data class RegisterStudent(
     val email: String
 ) : AppCommand
 
+data class UpdateStudent(
+    val student: StudentRegisteredTag,
+    val firstName: String?,
+    val lastName: String?
+) : AppCommand
+
 data class PayTuition(
     val student: StudentRegisteredTag,
     val amount: Double,

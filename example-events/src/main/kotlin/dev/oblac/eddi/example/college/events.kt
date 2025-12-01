@@ -15,6 +15,16 @@ data class StudentRegistered(
     val registeredAt: Instant = Instant.now()
 ) : Event
 
+@JvmInline
+value class StudentUpdatedTag(override val seq: Seq) : Tag<StudentUpdated>
+
+data class StudentUpdated(
+    val student: StudentRegisteredTag,
+    val firstName: String?,
+    val lastName: String?,
+    val updatedAt: Instant = Instant.now()
+) : Event
+
 
 @JvmInline
 value class TuitionPaidTag(override val seq: Seq) : Tag<TuitionPaid>
