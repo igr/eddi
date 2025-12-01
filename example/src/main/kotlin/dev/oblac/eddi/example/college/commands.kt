@@ -24,6 +24,12 @@ fun commandHandler(es: EventStore) = commandHandler { command ->
         }
 
         is UpdateStudent -> updateExistingStudent(
+            studentExists = { student ->
+                es.findEvent<StudentRegistered>(
+                    student.seq,
+                    StudentRegisteredEvent.NAME,
+                ) != null
+            },
             command
         ).map {
             es.storeEvent(it)
