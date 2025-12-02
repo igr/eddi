@@ -26,31 +26,35 @@ fun updateExistingStudent(
     command: UpdateStudent
 ): Either<CommandError, StudentUpdated> =
     command.right()
-        .flatMap { validateStudentExists(studentExists, it.student) }
+        .flatMap { validateStudentExists(it, studentExists) }
         .flatMap { validateUpdateFields(command) }
         .map {
             StudentUpdated(
-                student = command.student,
-                firstName = command.firstName,
-                lastName = command.lastName
+                student = it.student,
+                firstName = it.firstName,
+                lastName = it.lastName
             )
         }
 
+// TODO: this is important validation step!!!
 private fun validateStudentExists(
-    studentExists: (StudentRegisteredTag) -> Boolean,
-    student: StudentRegisteredTag
-): Either<StudentNotFoundError, Unit> = either {
+    command: UpdateStudent,
+    studentExists: (StudentRegisteredTag) -> Boolean
+): Either<StudentNotFoundError, UpdateStudent> = either {
+    val student = command.student
     ensure(studentExists(student)) {
         println("Student with seq ${student.seq} not found")
         StudentNotFoundError
     }
+    command
 }
 
 private fun validateUpdateFields(
     command: UpdateStudent
-): Either<UpdateExistingStudentError, Unit> = either {
+): Either<UpdateExistingStudentError, UpdateStudent> = either {
     ensure(command.firstName != null || command.lastName != null) {
         println("No fields to update for student ${command.student}")
         UpdateExistingStudentError
     }
+    command
 }
