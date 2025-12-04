@@ -31,9 +31,7 @@ value class TuitionPaidTag(override val seq: Seq) : Tag<TuitionPaid>
 
 data class TuitionPaid(
     val student: StudentRegisteredTag,
-    val amount: Double,
     val paidAt: Instant = Instant.now(),
-    val semester: String
 ) : Event
 
 

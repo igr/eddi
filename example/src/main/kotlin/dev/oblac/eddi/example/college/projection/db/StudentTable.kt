@@ -11,6 +11,7 @@ object StudentTable : Table("college.student") {
     val firstName = text("first_name")
     val lastName = text("last_name")
     val email = text("email").uniqueIndex()
+    val payed = bool("payed").default(false)
     val registeredAt = timestamp("registered_at")
 
     override val primaryKey = PrimaryKey(id)

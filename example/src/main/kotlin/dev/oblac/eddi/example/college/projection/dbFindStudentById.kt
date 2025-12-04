@@ -17,6 +17,7 @@ fun dbFindStudentById(id: UUID): Student? = transaction {
                 firstName = row[StudentTable.firstName],
                 lastName = row[StudentTable.lastName],
                 email = row[StudentTable.email],
+                payed = row[StudentTable.payed],
                 registeredAt = row[StudentTable.registeredAt]
             )
         }

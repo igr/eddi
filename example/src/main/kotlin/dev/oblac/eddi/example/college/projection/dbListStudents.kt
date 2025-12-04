@@ -14,6 +14,7 @@ data class Student(
     val firstName: String,
     val lastName: String,
     val email: String,
+    val payed: Boolean,
     val registeredAt: Instant
 )
 
@@ -29,6 +30,7 @@ fun dbListStudents(): List<Student> = transaction {
                 firstName = row[StudentTable.firstName],
                 lastName = row[StudentTable.lastName],
                 email = row[StudentTable.email],
+                payed = row[StudentTable.payed],
                 registeredAt = row[StudentTable.registeredAt]
             )
         }

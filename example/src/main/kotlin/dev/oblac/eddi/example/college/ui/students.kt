@@ -21,6 +21,7 @@ fun Routing.pageStudents() {
                                 th { +"Last Name" }
                                 th { +"Email" }
                                 th { +"Registered At" }
+                                th { +"Payed"}
                                 th { +"Actions" }
                             }
                         }
@@ -31,8 +32,10 @@ fun Routing.pageStudents() {
                                     td { +student.lastName }
                                     td { +student.email }
                                     td { +student.registeredAt.toString() }
+                                    td { +(if (student.payed) "✅" else "❌") }
                                     td {
                                         a(href = "/student-edit.html?id=${student.id}") { +"Edit" }
+                                        a(href = "/student-pay.html?id=${student.id}") { +"Pay" }
                                     }
                                 }
                             }

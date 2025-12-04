@@ -4,6 +4,7 @@ import arrow.core.Either
 import dev.oblac.eddi.EventStore
 import dev.oblac.eddi.UnknownCommandError
 import dev.oblac.eddi.commandHandler
+import dev.oblac.eddi.example.college.cmd.payStudentTuition
 import dev.oblac.eddi.example.college.cmd.registerNewStudent
 import dev.oblac.eddi.example.college.cmd.updateExistingStudent
 
@@ -24,6 +25,18 @@ fun commandHandler(es: EventStore) = commandHandler { command ->
         }
 
         is UpdateStudent -> updateExistingStudent(
+            studentExists = { student ->
+                es.findEvent<StudentRegistered>(
+                    student.seq,
+                    StudentRegisteredEvent.NAME,
+                ) != null
+            },
+            command
+        ).map {
+            es.storeEvent(it)
+        }
+
+        is PayTuition -> payStudentTuition(
             studentExists = { student ->
                 es.findEvent<StudentRegistered>(
                     student.seq,

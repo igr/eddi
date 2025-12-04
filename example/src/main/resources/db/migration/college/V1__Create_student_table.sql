@@ -1,5 +1,4 @@
 
-
 ---
 --- Student table.
 ---
@@ -10,6 +9,7 @@ CREATE TABLE IF NOT EXISTS college.student
     first_name    TEXT        NOT NULL,
     last_name     TEXT        NOT NULL,
     email         TEXT        NOT NULL UNIQUE,
+    payed         BOOLEAN     NOT NULL DEFAULT false,
     registered_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

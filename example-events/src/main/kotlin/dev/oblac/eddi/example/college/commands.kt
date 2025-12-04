@@ -20,8 +20,6 @@ data class UpdateStudent(
 
 data class PayTuition(
     val student: StudentRegisteredTag,
-    val amount: Double,
-    val semester: String
 ) : AppCommand
 
 data class EnrollInCourse(
