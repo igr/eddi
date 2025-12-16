@@ -14,37 +14,41 @@ import dev.oblac.eddi.example.college.cmd.updateExistingStudent
 fun commandHandler(es: EventStore) = commandHandler { command ->
     when (command) {
         is RegisterStudent -> registerNewStudent(
-            emailExists = { email ->
-                es.findEvents<StudentRegistered>(
-                    StudentRegisteredEvent.NAME,
-                    mapOf("email" to email)
-                ).isNotEmpty()
-            }, command
-        ).map {
+            command
+        ) { email ->
+            es.findEvents<StudentRegistered>(
+                StudentRegisteredEvent.NAME,
+                mapOf("email" to email)
+            ).isNotEmpty()
+        }.map {
             es.storeEvent(it)
         }
 
         is UpdateStudent -> updateExistingStudent(
-            studentExists = { student ->
-                es.findEvent<StudentRegistered>(
-                    student.seq,
-                    StudentRegisteredEvent.NAME,
-                ) != null
-            },
             command
-        ).map {
+        ) { student ->
+            es.findEvent<StudentRegistered>(
+                student.seq,
+                StudentRegisteredEvent.NAME,
+            ) != null
+        }.map {
             es.storeEvent(it)
         }
 
         is PayTuition -> payStudentTuition(
+            command,
             studentExists = { student ->
                 es.findEvent<StudentRegistered>(
                     student.seq,
                     StudentRegisteredEvent.NAME,
                 ) != null
             },
-            command
-        ).map {
+            studentNotAlreadyPayed = { student ->
+                es.findEventByTag(
+                    TuitionPaidEvent.NAME,
+                    StudentRegisteredTag(student.seq)
+                ) == null
+            }).map {
             es.storeEvent(it)
         }
 

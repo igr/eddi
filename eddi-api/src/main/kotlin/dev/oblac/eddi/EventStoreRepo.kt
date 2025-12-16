@@ -7,7 +7,12 @@ interface EventStoreRepo {
      */
     fun <T: Event> findLastEventByTagBefore(lastEvent: Seq, tagToFind: Tag<T>): EventEnvelope<T>?
 
+    fun <T: Event> findEventByTag(eventName: EventName, tagToFind: Tag<T>): EventEnvelope<T>?
+
     fun <T: Event> findEvents(name: EventName, dataFilters: Map<String, String> = mapOf()): List<EventEnvelope<T>>
 
+    /**
+     * Finds a specific event by its sequence ID and name.
+     */
     fun <T: Event> findEvent(seq: Seq, name: EventName): EventEnvelope<T>?
 }

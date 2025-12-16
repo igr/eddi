@@ -17,8 +17,8 @@ object RegisterNewStudentError : CommandError {
  * Registers a new student.
  */
 fun registerNewStudent(
-    emailExists: (String) -> Boolean,
-    command: RegisterStudent
+    command: RegisterStudent,
+    emailExists: (String) -> Boolean
 ): Either<CommandError, StudentRegistered> =
     command.right()
         .flatMap { uniqueStudentEmail(it, emailExists) }

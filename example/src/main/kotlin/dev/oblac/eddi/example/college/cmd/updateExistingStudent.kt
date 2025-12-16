@@ -22,12 +22,12 @@ object StudentNotFoundError : CommandError {
  * Updates an existing student.
  */
 fun updateExistingStudent(
-    studentExists: (StudentRegisteredTag) -> Boolean,
-    command: UpdateStudent
+    command: UpdateStudent,
+    studentExists: (StudentRegisteredTag) -> Boolean
 ): Either<CommandError, StudentUpdated> =
     command.right()
         .flatMap { validateStudentExists(it, studentExists) }
-        .flatMap { validateUpdateFields(command) }
+        .flatMap { validateUpdateFields(it) }
         .map {
             StudentUpdated(
                 student = it.student,

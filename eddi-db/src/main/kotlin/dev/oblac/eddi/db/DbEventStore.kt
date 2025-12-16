@@ -20,6 +20,11 @@ class DbEventStore : EventStore {
         return dbFindLastEventByTag(lastEvent, targetRef) as EventEnvelope<T>?
     }
 
+    override fun <T : Event> findEventByTag(eventName: EventName, tagToFind: Tag<T>): EventEnvelope<T>? {
+        val targetRef = Events.refOf(tagToFind)
+        return dbFindEventByTag(eventName, targetRef) as EventEnvelope<T>?
+    }
+
     override fun <T: Event> findEvents(name: EventName, dataFilters: Map<String, String>): List<EventEnvelope<T>> {
         return dbFindEventsByName(name.value, dataFilters) as List<EventEnvelope<T>>
     }
@@ -27,5 +32,6 @@ class DbEventStore : EventStore {
     override fun <T: Event> findEvent(seq: Seq, name: EventName): EventEnvelope<T>? {
         return dbFindEventBySeqAndName(seq, name.value) as EventEnvelope<T>?
     }
+
 
 }

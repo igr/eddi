@@ -18,11 +18,13 @@ object PayStudentTuitionError : CommandError {
  * Pays student tuition.
  */
 fun payStudentTuition(
+    command: PayTuition,
     studentExists: (StudentRegisteredTag) -> Boolean,
-    command: PayTuition
+    studentNotAlreadyPayed: (StudentRegisteredTag) -> Boolean,
 ): Either<CommandError, TuitionPaid> =
     command.right()
         .flatMap { validateStudentExists(it, studentExists) }
+        .flatMap { validateStudentNotAlreadyPaid(it, studentNotAlreadyPayed) }
         .map {
             TuitionPaid(
                 student = it.student,
@@ -35,6 +37,17 @@ private fun validateStudentExists(
 ): Either<PayStudentTuitionError, PayTuition> = either {
     ensure(studentExists(command.student)) {
         println("Student with seq ${command.student.seq} not found")
+        PayStudentTuitionError
+    }
+    command
+}
+
+private fun validateStudentNotAlreadyPaid(
+    command: PayTuition,
+    studentPayed: (StudentRegisteredTag) -> Boolean
+): Either<PayStudentTuitionError, PayTuition> = either {
+    ensure(!studentPayed(command.student)) {
+        println("Student with seq ${command.student.seq} has already paid tuition")
         PayStudentTuitionError
     }
     command
