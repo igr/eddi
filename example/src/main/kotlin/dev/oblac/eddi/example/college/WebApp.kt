@@ -24,6 +24,7 @@ fun Application.configureRouting() {
         pageStudentEdit()
         pageStudentPay()
         pageCourseAdd()
+        pageCourses()
         apiStudents()
         apiStudent()
         apiStudentPay()

@@ -61,7 +61,9 @@ fun commandHandler(es: EventStore) = commandHandler { command ->
                     mapOf("courseName" to courseName)
                 ).isNotEmpty()
             }
-        )
+        ).map {
+            es.storeEvent(it)
+        }
 
         else -> {
             println("Unknown command: $command")

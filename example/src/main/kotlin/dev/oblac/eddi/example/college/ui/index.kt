@@ -19,6 +19,9 @@ fun Routing.pageIndex() {
                         a(href = "/student-add.html") { +"Add a Student" }
                     }
                     div("menu") {
+                        a(href = "/courses.html") { +"List Courses" }
+                    }
+                    div("menu") {
                         a(href = "/course-add.html") { +"Publish Course" }
                     }
                 }
