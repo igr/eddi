@@ -41,7 +41,6 @@ value class CoursePublishedTag(override val seq: Seq) : Tag<CoursePublished>
 data class CoursePublished(
     val courseName: String,
     val instructor: String,
-    val credits: Int,
     val publishAt: Instant = Instant.now()
 ) : Event
 

@@ -30,7 +30,6 @@ data class EnrollInCourse(
 data class PublishCourse(
     val courseName: String,
     val instructor: String,
-    val credits: Int
 ) : AppCommand
 
 data class GradeStudent(

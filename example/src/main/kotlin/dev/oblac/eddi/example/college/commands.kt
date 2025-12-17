@@ -5,6 +5,7 @@ import dev.oblac.eddi.EventStore
 import dev.oblac.eddi.UnknownCommandError
 import dev.oblac.eddi.commandHandler
 import dev.oblac.eddi.example.college.cmd.payStudentTuition
+import dev.oblac.eddi.example.college.cmd.publishCourse
 import dev.oblac.eddi.example.college.cmd.registerNewStudent
 import dev.oblac.eddi.example.college.cmd.updateExistingStudent
 
@@ -51,6 +52,16 @@ fun commandHandler(es: EventStore) = commandHandler { command ->
             }).map {
             es.storeEvent(it)
         }
+
+        is PublishCourse -> publishCourse(
+            command,
+            courseExists = { courseName ->
+                es.findEvents<CoursePublished>(
+                    CoursePublishedEvent.NAME,
+                    mapOf("courseName" to courseName)
+                ).isNotEmpty()
+            }
+        )
 
         else -> {
             println("Unknown command: $command")
