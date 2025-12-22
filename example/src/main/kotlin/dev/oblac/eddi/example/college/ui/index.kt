@@ -74,6 +74,16 @@ fun BODY.javascript(url: String) {
       // Disable while submitting
       submitButton.disabled = true;
       submitButton.textContent = "Sending...";
+      
+      // Add data attributes to request body if present on the submit button
+      if (event.submitter) {
+        for (const attr of event.submitter.attributes) {
+          if (attr.name.startsWith("data-")) {
+            const key = attr.name.substring(5);
+            bodyObj[key] = attr.value;
+          }
+        }
+      }
 
       try {
         const response = await fetch(API_ENDPOINT, {

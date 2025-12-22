@@ -13,13 +13,14 @@ fun Routing.pageCourses() {
             body {
                 div("container") {
                     h1 { +"Courses" }
-                    a (href = "/") { +"Home" }
+                    a(href = "/") { +"Home" }
                     table {
                         thead {
                             tr {
                                 th { +"Name" }
                                 th { +"Instructor" }
                                 th { +"Created At" }
+                                th { +"Actions" }
                             }
                         }
                         tbody {
@@ -28,12 +29,12 @@ fun Routing.pageCourses() {
                                     td { +course.name }
                                     td { +course.instructor }
                                     td { +course.createdAt.toString() }
+                                    td { a(href = "/course.html?id=${course.id}") { +"View" } }
                                 }
                             }
                         }
                     }
                 }
-                javascript("courses")
             }
         }
     }
