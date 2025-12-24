@@ -5,6 +5,7 @@ import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventListener
 import dev.oblac.eddi.db.DbEventProcessor
 import dev.oblac.eddi.example.college.projection.dbInsertCourse
+import dev.oblac.eddi.example.college.projection.dbInsertEnrollment
 import dev.oblac.eddi.example.college.projection.dbInsertStudent
 import dev.oblac.eddi.example.college.projection.dbUpdateStudent
 import dev.oblac.eddi.example.college.projection.dbUpdateTuitionPayment
@@ -18,6 +19,7 @@ object Projections : EventListener {
         envelope.on<StudentUpdated> { dbUpdateStudent(it) }
         envelope.on<TuitionPaid> { dbUpdateTuitionPayment(it) }
         envelope.on<CoursePublished> { dbInsertCourse(it) }
+        envelope.on<StudentEnrolledInCourse> { dbInsertEnrollment(it) }
     }
 
     fun start() {
