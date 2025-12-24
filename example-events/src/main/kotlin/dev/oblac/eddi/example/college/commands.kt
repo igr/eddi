@@ -22,8 +22,8 @@ data class PayTuition(
     val student: StudentRegisteredTag,
 ) : AppCommand
 
-data class EnrollInCourse(
-    val tuitionPaid: TuitionPaidTag,
+data class EnrollStudentInCourse(
+    val student: StudentRegisteredTag,
     val course: CoursePublishedTag,
 ) : AppCommand
 

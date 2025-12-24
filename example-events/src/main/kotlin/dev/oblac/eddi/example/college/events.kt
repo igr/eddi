@@ -45,10 +45,10 @@ data class CoursePublished(
 ) : Event
 
 @JvmInline
-value class EnrolledTag(override val seq: Seq) : Tag<Enrolled>
+value class EnrolledTag(override val seq: Seq) : Tag<StudentEnrolledInCourse>
 
-data class Enrolled(
-    val tuitionPaid: TuitionPaidTag,
+data class StudentEnrolledInCourse(
+    val student: StudentRegisteredTag,
     val course: CoursePublishedTag,
     val enrolledAt: Instant = Instant.now()
 ) : Event

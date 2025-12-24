@@ -25,6 +25,11 @@ class DbEventStore : EventStore {
         return dbFindEventByTag(eventName, targetRef) as EventEnvelope<T>?
     }
 
+    override fun <T : Event> findEventByMultipleTags(eventName: EventName, vararg tagsToFind: Tag<Event>): EventEnvelope<T>? {
+        val refs = tagsToFind.map { Events.refOf(it) }.toTypedArray()
+        return dbFindEventByMultipleTags(eventName, *refs) as EventEnvelope<T>?
+    }
+
     override fun <T: Event> findEvents(name: EventName, dataFilters: Map<String, String>): List<EventEnvelope<T>> {
         return dbFindEventsByName(name.value, dataFilters) as List<EventEnvelope<T>>
     }

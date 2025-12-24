@@ -65,8 +65,8 @@ fun Routing.pageCourseView() {
                                         td { +"${student.firstName} ${student.lastName}" }
                                         td {
                                             button(type = ButtonType.submit) {
-                                                attributes["data-studentId"] = student.id.toString()
-                                                attributes["data-courseId"] = course.id.toString()
+                                                attributes["data-student"] = student.id.toString()
+                                                attributes["data-course"] = course.id.toString()
                                                 +"Enroll"
                                             }
                                         }

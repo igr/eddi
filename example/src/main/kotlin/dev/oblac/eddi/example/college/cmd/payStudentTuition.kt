@@ -44,9 +44,9 @@ private fun validateStudentExists(
 
 private fun validateStudentNotAlreadyPaid(
     command: PayTuition,
-    studentPayed: (StudentRegisteredTag) -> Boolean
+    studentNotPayed: (StudentRegisteredTag) -> Boolean
 ): Either<PayStudentTuitionError, PayTuition> = either {
-    ensure(!studentPayed(command.student)) {
+    ensure(studentNotPayed(command.student)) {
         println("Student with seq ${command.student.seq} has already paid tuition")
         PayStudentTuitionError
     }
