@@ -6,5 +6,3 @@ import dev.oblac.eddi.CommandError
 // to group all application-specific command errors
 // todo maybe do the same with commands? events not as we dont use switches on them
 sealed interface AppCommandError : CommandError
-
-data class StudentAlreadyRegistered(val email: String) : AppCommandError

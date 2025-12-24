@@ -36,8 +36,3 @@ data class GradeStudent(
     val enrolled: EnrolledTag,
     val grade: String
 ) : AppCommand
-
-data class DeregisterStudent(
-    val student: StudentRegisteredTag,
-    val reason: String? = null
-) : Command
