@@ -11,25 +11,10 @@ import dev.oblac.eddi.example.college.cmd.*
  */
 fun commandHandler(es: EventStore) = commandHandler { command ->
     when (command) {
-        is RegisterStudent -> registerNewStudent(
-            command
-        ) { email ->
-            es.findEvents<StudentRegistered>(
-                StudentRegisteredEvent.NAME,
-                mapOf("email" to email)
-            ).isNotEmpty()
-        }.map {
+        is RegisterStudent -> registerStudent(es, command).map {
             es.storeEvent(it)
         }
-
-        is UpdateStudent -> updateExistingStudent(
-            command
-        ) { student ->
-            es.findEvent<StudentRegistered>(
-                student.seq,
-                StudentRegisteredEvent.NAME,
-            ) != null
-        }.map {
+        is UpdateStudent -> updateStudent(es, command).map {
             es.storeEvent(it)
         }
 
