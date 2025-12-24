@@ -15,9 +15,6 @@ data class StudentRegistered(
     val registeredAt: Instant = Instant.now()
 ) : Event
 
-@JvmInline
-value class StudentUpdatedTag(override val seq: Seq) : Tag<StudentUpdated>
-
 data class StudentUpdated(
     val student: StudentRegisteredTag,
     val firstName: String?,
@@ -25,15 +22,10 @@ data class StudentUpdated(
     val updatedAt: Instant = Instant.now()
 ) : Event
 
-
-@JvmInline
-value class TuitionPaidTag(override val seq: Seq) : Tag<TuitionPaid>
-
 data class TuitionPaid(
     val student: StudentRegisteredTag,
     val paidAt: Instant = Instant.now(),
 ) : Event
-
 
 @JvmInline
 value class CoursePublishedTag(override val seq: Seq) : Tag<CoursePublished>
@@ -44,18 +36,15 @@ data class CoursePublished(
     val publishAt: Instant = Instant.now()
 ) : Event
 
-@JvmInline
-value class EnrolledTag(override val seq: Seq) : Tag<StudentEnrolledInCourse>
-
 data class StudentEnrolledInCourse(
     val student: StudentRegisteredTag,
     val course: CoursePublishedTag,
     val enrolledAt: Instant = Instant.now()
 ) : Event
 
-data class Graded(
-    val enrolled: EnrolledTag,
-    val grade: String, // A, B, C, D, F
-    val gradedAt: Instant = Instant.now()
-) : Event
+//data class Graded(
+//    val enrolled: EnrolledTag,
+//    val grade: String, // A, B, C, D, F
+//    val gradedAt: Instant = Instant.now()
+//) : Event
 

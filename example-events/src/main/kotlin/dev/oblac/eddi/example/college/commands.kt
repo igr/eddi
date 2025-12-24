@@ -32,7 +32,7 @@ data class PublishCourse(
     val instructor: String,
 ) : AppCommand
 
-data class GradeStudent(
-    val enrolled: EnrolledTag,
-    val grade: String
-) : AppCommand
+//data class GradeStudent(
+//    val enrolled: EnrolledTag,
+//    val grade: String
+//) : AppCommand
