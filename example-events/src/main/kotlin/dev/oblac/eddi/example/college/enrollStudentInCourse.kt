@@ -1,22 +1,23 @@
-package dev.oblac.eddi.example.college.cmd
+package dev.oblac.eddi.example.college
 
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
-import dev.oblac.eddi.CommandError
-import dev.oblac.eddi.EventStore
-import dev.oblac.eddi.example.college.CoursePublished
-import dev.oblac.eddi.example.college.CoursePublishedEvent
-import dev.oblac.eddi.example.college.CoursePublishedTag
-import dev.oblac.eddi.example.college.EnrollStudentInCourse
-import dev.oblac.eddi.example.college.StudentEnrolledInCourse
-import dev.oblac.eddi.example.college.StudentEnrolledInCourseEvent
-import dev.oblac.eddi.example.college.StudentRegistered
-import dev.oblac.eddi.example.college.StudentRegisteredEvent
-import dev.oblac.eddi.example.college.StudentRegisteredTag
-import dev.oblac.eddi.example.college.TuitionPaidEvent
-import dev.oblac.eddi.process
+import dev.oblac.eddi.*
+import java.time.Instant
+
+data class EnrollStudentInCourse(
+    val student: StudentRegisteredTag,
+    val course: CoursePublishedTag,
+) : Command
+
+data class StudentEnrolledInCourse(
+    val student: StudentRegisteredTag,
+    val course: CoursePublishedTag,
+    val enrolledAt: Instant = Instant.now()
+) : Event
+
 
 sealed interface EnrollStudentInCourseError : CommandError {
     data class StudentNotFound(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
