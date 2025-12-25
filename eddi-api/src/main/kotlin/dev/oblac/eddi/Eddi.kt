@@ -31,6 +31,7 @@ class AsyncCommandHandler<R>(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val target: CommandHandler<R>
 ) : CommandHandler<UUID> {
+    // todo make jobs expirable, make the storage pluggable
     private val jobs = mutableMapOf<UUID, Job>()
 
     override fun invoke(command: Command): Either<CommandError, UUID> {
