@@ -1,13 +1,22 @@
 package dev.oblac.eddi.example.college.cmd
 
 import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import dev.oblac.eddi.CommandError
+import dev.oblac.eddi.EventStore
+import dev.oblac.eddi.example.college.CoursePublished
+import dev.oblac.eddi.example.college.CoursePublishedEvent
 import dev.oblac.eddi.example.college.CoursePublishedTag
 import dev.oblac.eddi.example.college.EnrollStudentInCourse
 import dev.oblac.eddi.example.college.StudentEnrolledInCourse
+import dev.oblac.eddi.example.college.StudentEnrolledInCourseEvent
+import dev.oblac.eddi.example.college.StudentRegistered
+import dev.oblac.eddi.example.college.StudentRegisteredEvent
 import dev.oblac.eddi.example.college.StudentRegisteredTag
+import dev.oblac.eddi.example.college.TuitionPaidEvent
+import dev.oblac.eddi.process
 
 sealed interface EnrollStudentInCourseError : CommandError {
     data class StudentNotFound(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
@@ -18,38 +27,73 @@ sealed interface EnrollStudentInCourseError : CommandError {
         override fun toString(): String = "Course with id ${course.seq} not found"
     }
 
-    class TuitionNotPayed(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
-        override fun toString(): String =
-            "Student with id ${student.seq} has not payed tuition"
+    data class TuitionNotPaid(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
+        override fun toString(): String = "Student with id ${student.seq} has not paid tuition"
     }
 
-    class AlreadyEnrolled(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
-        override fun toString(): String =
-            "Student with id ${student.seq} has already been enrolled in the course"
+    data class AlreadyEnrolled(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
+        override fun toString(): String = "Student with id ${student.seq} has already been enrolled in the course"
     }
 }
 
-fun enrollStudentInCourse(
-    command: EnrollStudentInCourse,
-    studentExists: (StudentRegisteredTag) -> Boolean,
-    courseExists: (CoursePublishedTag) -> Boolean,
-    unique: (StudentRegisteredTag, CoursePublishedTag) -> Boolean,
-    tuitionPaid: (StudentRegisteredTag) -> Boolean,
-): Either<CommandError, StudentEnrolledInCourse> {
-    if (!studentExists(command.student)) {
-        return EnrollStudentInCourseError.StudentNotFound(command.student).left()
+fun ensureEnrollStudentExists(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.StudentNotFound, EnrollStudentInCourse> =
+    {
+        either {
+            ensureNotNull(
+                es.findEvent<StudentRegistered>(
+                    it.student.seq,
+                    StudentRegisteredEvent.NAME,
+                )
+            ) { EnrollStudentInCourseError.StudentNotFound(it.student) }
+            it
+        }
     }
-    if (!courseExists(command.course)) {
-        return EnrollStudentInCourseError.CourseNotFound(command.course).left()
+
+fun ensureCourseExists(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.CourseNotFound, EnrollStudentInCourse> =
+    {
+        either {
+            ensureNotNull(
+                es.findEvent<CoursePublished>(
+                    it.course.seq,
+                    CoursePublishedEvent.NAME,
+                )
+            ) { EnrollStudentInCourseError.CourseNotFound(it.course) }
+            it
+        }
     }
-    if (!unique(command.student, command.course)) {
-        return EnrollStudentInCourseError.AlreadyEnrolled(command.student).left()
+
+fun ensureNotAlreadyEnrolled(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.AlreadyEnrolled, EnrollStudentInCourse> =
+    {
+        either {
+            ensure(
+                es.findEventByMultipleTags<StudentEnrolledInCourse>(
+                    StudentEnrolledInCourseEvent.NAME,
+                    StudentRegisteredTag(it.student.seq),
+                    CoursePublishedTag(it.course.seq)
+                ) == null
+            ) { EnrollStudentInCourseError.AlreadyEnrolled(it.student) }
+            it
+        }
     }
-    if (!tuitionPaid(command.student)) {
-        return EnrollStudentInCourseError.TuitionNotPayed(command.student).left()
+
+fun ensureTuitionPaid(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.TuitionNotPaid, EnrollStudentInCourse> =
+    {
+        either {
+            ensure(
+                es.findEventByTag(
+                    TuitionPaidEvent.NAME,
+                    StudentRegisteredTag(it.student.seq)
+                ) != null
+            ) { EnrollStudentInCourseError.TuitionNotPaid(it.student) }
+            it
+        }
     }
-    return StudentEnrolledInCourse(
-        student = command.student,
-        course = command.course
-    ).right()
-}
+
+operator fun EnrollStudentInCourse.invoke(es: EventStore) =
+    process(this) {
+        +ensureEnrollStudentExists(es)
+        +ensureCourseExists(es)
+        +ensureNotAlreadyEnrolled(es)
+        +ensureTuitionPaid(es)
+        emit { StudentEnrolledInCourse(student, course) }
+    }

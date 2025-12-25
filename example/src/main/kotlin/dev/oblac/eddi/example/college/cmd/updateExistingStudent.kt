@@ -41,8 +41,8 @@ fun ensureHasUpdateFields(): (UpdateStudent) -> Either<UpdateExistingStudentErro
         }
     }
 
-fun updateStudent(es: EventStore, command: UpdateStudent) =
-    process(command) {
+operator fun UpdateStudent.invoke(es: EventStore) =
+    process(this) {
         +ensureStudentExists(es)
         +ensureHasUpdateFields()
         emit { StudentUpdated(student, firstName, lastName) }

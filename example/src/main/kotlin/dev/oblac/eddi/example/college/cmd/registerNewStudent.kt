@@ -28,8 +28,8 @@ fun ensureUniqueEmail(es: EventStore): (RegisterStudent) -> Either<RegisterNewSt
     }
 
 
-fun registerStudent(es: EventStore, command: RegisterStudent) =
-    process(command) {
+operator fun RegisterStudent.invoke(es: EventStore) =
+    process(this) {
         +ensureUniqueEmail(es)
-        emit { StudentRegistered(firstName = firstName, lastName = lastName, email = email) }
+        emit { StudentRegistered(firstName, lastName, email) }
     }
