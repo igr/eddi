@@ -37,7 +37,7 @@ sealed interface EnrollStudentInCourseError : CommandError {
     }
 }
 
-fun ensureEnrollStudentExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.StudentNotFound, EnrollStudentInCourse> =
+fun ensureEnrollStudentExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
     {
         either {
             ensureNotNull(
@@ -50,7 +50,7 @@ fun ensureEnrollStudentExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Ei
         }
     }
 
-fun ensureCourseExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.CourseNotFound, EnrollStudentInCourse> =
+fun ensureCourseExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
     {
         either {
             ensureNotNull(
@@ -63,7 +63,7 @@ fun ensureCourseExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<En
         }
     }
 
-fun ensureNotAlreadyEnrolled(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.AlreadyEnrolled, EnrollStudentInCourse> =
+fun ensureNotAlreadyEnrolled(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
     {
         either {
             ensure(
@@ -77,7 +77,7 @@ fun ensureNotAlreadyEnrolled(es: EventStoreRepo): (EnrollStudentInCourse) -> Eit
         }
     }
 
-fun ensureTuitionPaid(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.TuitionNotPaid, EnrollStudentInCourse> =
+fun ensureTuitionPaid(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
     {
         either {
             ensure(
