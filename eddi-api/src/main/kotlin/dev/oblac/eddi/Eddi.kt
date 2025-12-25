@@ -13,6 +13,12 @@ fun interface EventListener {
     operator fun invoke(envelope: EventEnvelope<Event>)
 }
 
+/**
+ * Generic command handler functional interface.
+ * Implementations of this interface can handle commands and return either a [CommandError] or a result of type [R].
+ *
+ * @param R the result type of the command handler
+ */
 fun interface CommandHandler<R> {
     operator fun invoke(command: Command): Either<CommandError, R>
 }
@@ -47,11 +53,8 @@ class AsyncCommandHandler<R>(
 /**
  * Creates a [CommandHandler] from a lambda.
  */
-fun <R> commandHandler(handler: (Command) -> Either<CommandError, R>): CommandHandler<R> = object : CommandHandler<R> {
-    override fun invoke(command: Command): Either<CommandError, R> {
-        return handler(command)
-    }
-}
+fun <R> commandHandler(handler: (Command) -> Either<CommandError, R>): CommandHandler<R> =
+    CommandHandler { command -> handler(command) }
 
 /**
  * Extension function to apply async execution effect to a CommandHandler.
