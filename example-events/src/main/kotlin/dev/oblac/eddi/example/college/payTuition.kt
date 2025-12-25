@@ -21,7 +21,7 @@ sealed interface PayTuitionError : CommandError {
     object TuitionAlreadyPaid : PayTuitionError
 }
 
-fun ensurePayTuitionStudentExists(es: EventStore): (PayTuition) -> Either<PayTuitionError, PayTuition> =
+fun ensurePayTuitionStudentExists(es: EventStoreRepo): (PayTuition) -> Either<PayTuitionError, PayTuition> =
     {
         either {
             ensureNotNull(
@@ -34,7 +34,7 @@ fun ensurePayTuitionStudentExists(es: EventStore): (PayTuition) -> Either<PayTui
         }
     }
 
-fun ensureTuitionNotAlreadyPaid(es: EventStore): (PayTuition) -> Either<PayTuitionError, PayTuition> =
+fun ensureTuitionNotAlreadyPaid(es: EventStoreRepo): (PayTuition) -> Either<PayTuitionError, PayTuition> =
     {
         either {
             ensure(
@@ -47,7 +47,7 @@ fun ensureTuitionNotAlreadyPaid(es: EventStore): (PayTuition) -> Either<PayTuiti
         }
     }
 
-operator fun PayTuition.invoke(es: EventStore) =
+operator fun PayTuition.invoke(es: EventStoreRepo) =
     process(this) {
         +ensurePayTuitionStudentExists(es)
         +ensureTuitionNotAlreadyPaid(es)

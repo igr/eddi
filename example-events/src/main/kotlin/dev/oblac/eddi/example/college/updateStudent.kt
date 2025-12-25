@@ -30,7 +30,7 @@ sealed interface UpdateStudentError : CommandError {
     }
 }
 
-fun ensureStudentExists(es: EventStore): (UpdateStudent) -> Either<UpdateStudentError, UpdateStudent> =
+fun ensureStudentExists(es: EventStoreRepo): (UpdateStudent) -> Either<UpdateStudentError, UpdateStudent> =
     {
         either {
             ensureNotNull(
@@ -52,7 +52,7 @@ fun ensureHasUpdateFields(): (UpdateStudent) -> Either<UpdateStudentError, Updat
         }
     }
 
-operator fun UpdateStudent.invoke(es: EventStore) =
+operator fun UpdateStudent.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureStudentExists(es)
         +ensureHasUpdateFields()

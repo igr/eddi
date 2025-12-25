@@ -24,7 +24,7 @@ sealed interface PublishCourseError : CommandError {
     object CourseAlreadyExists : PublishCourseError
 }
 
-fun ensureUniqueCourse(es: EventStore): (PublishCourse) -> Either<PublishCourseError, PublishCourse> =
+fun ensureUniqueCourse(es: EventStoreRepo): (PublishCourse) -> Either<PublishCourseError, PublishCourse> =
     {
         either {
             ensure(
@@ -37,7 +37,7 @@ fun ensureUniqueCourse(es: EventStore): (PublishCourse) -> Either<PublishCourseE
         }
     }
 
-operator fun PublishCourse.invoke(es: EventStore) =
+operator fun PublishCourse.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureUniqueCourse(es)
         emit { CoursePublished(courseName, instructor) }

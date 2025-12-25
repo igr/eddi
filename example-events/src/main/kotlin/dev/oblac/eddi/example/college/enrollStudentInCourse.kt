@@ -37,7 +37,7 @@ sealed interface EnrollStudentInCourseError : CommandError {
     }
 }
 
-fun ensureEnrollStudentExists(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.StudentNotFound, EnrollStudentInCourse> =
+fun ensureEnrollStudentExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.StudentNotFound, EnrollStudentInCourse> =
     {
         either {
             ensureNotNull(
@@ -50,7 +50,7 @@ fun ensureEnrollStudentExists(es: EventStore): (EnrollStudentInCourse) -> Either
         }
     }
 
-fun ensureCourseExists(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.CourseNotFound, EnrollStudentInCourse> =
+fun ensureCourseExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.CourseNotFound, EnrollStudentInCourse> =
     {
         either {
             ensureNotNull(
@@ -63,7 +63,7 @@ fun ensureCourseExists(es: EventStore): (EnrollStudentInCourse) -> Either<Enroll
         }
     }
 
-fun ensureNotAlreadyEnrolled(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.AlreadyEnrolled, EnrollStudentInCourse> =
+fun ensureNotAlreadyEnrolled(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.AlreadyEnrolled, EnrollStudentInCourse> =
     {
         either {
             ensure(
@@ -77,7 +77,7 @@ fun ensureNotAlreadyEnrolled(es: EventStore): (EnrollStudentInCourse) -> Either<
         }
     }
 
-fun ensureTuitionPaid(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.TuitionNotPaid, EnrollStudentInCourse> =
+fun ensureTuitionPaid(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError.TuitionNotPaid, EnrollStudentInCourse> =
     {
         either {
             ensure(
@@ -90,7 +90,7 @@ fun ensureTuitionPaid(es: EventStore): (EnrollStudentInCourse) -> Either<EnrollS
         }
     }
 
-operator fun EnrollStudentInCourse.invoke(es: EventStore) =
+operator fun EnrollStudentInCourse.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureEnrollStudentExists(es)
         +ensureCourseExists(es)
