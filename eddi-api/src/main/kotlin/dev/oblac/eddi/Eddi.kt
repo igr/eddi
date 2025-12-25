@@ -27,7 +27,6 @@ fun interface CommandProcessor<C : Command> {
     operator fun invoke(command: C): Either<CommandError, C>
 }
 
-
 class AsyncCommandHandler<R>(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val target: CommandHandler<R>

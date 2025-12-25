@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college
 
-import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import dev.oblac.eddi.*
@@ -20,28 +19,24 @@ sealed interface PayTuitionError : CommandError {
     object TuitionAlreadyPaid : PayTuitionError
 }
 
-fun ensurePayTuitionStudentExists(es: EventStoreRepo) = CommandProcessor<PayTuition> {
-    either {
-        ensureNotNull(
-            es.findEvent<StudentRegistered>(
-                it.student.seq,
-                StudentRegisteredEvent.NAME,
-            )
-        ) { PayTuitionError.StudentNotFound }
-        it
-    }
+fun ensurePayTuitionStudentExists(es: EventStoreRepo) = commandProcessor<PayTuition> {
+    ensureNotNull(
+        es.findEvent<StudentRegistered>(
+            it.student.seq,
+            StudentRegisteredEvent.NAME,
+        )
+    ) { PayTuitionError.StudentNotFound }
+    it
 }
 
-fun ensureTuitionNotAlreadyPaid(es: EventStoreRepo) = CommandProcessor<PayTuition> {
-    either {
-        ensure(
-            es.findEventByTag(
-                TuitionPaidEvent.NAME,
-                StudentRegisteredTag(it.student.seq)
-            ) == null
-        ) { PayTuitionError.TuitionAlreadyPaid }
-        it
-    }
+fun ensureTuitionNotAlreadyPaid(es: EventStoreRepo) = commandProcessor<PayTuition> {
+    ensure(
+        es.findEventByTag(
+            TuitionPaidEvent.NAME,
+            StudentRegisteredTag(it.student.seq)
+        ) == null
+    ) { PayTuitionError.TuitionAlreadyPaid }
+    it
 }
 
 operator fun PayTuition.invoke(es: EventStoreRepo) =

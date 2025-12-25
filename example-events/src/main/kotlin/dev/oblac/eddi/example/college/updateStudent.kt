@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college
 
-import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import dev.oblac.eddi.*
@@ -29,24 +28,20 @@ sealed interface UpdateStudentError : CommandError {
     }
 }
 
-fun ensureStudentExists(es: EventStoreRepo) = CommandProcessor<UpdateStudent> {
-    either {
-        ensureNotNull(
-            es.findEvent<StudentRegistered>(
-                it.student.seq,
-                StudentRegisteredEvent.NAME,
-            )
-        ) { UpdateStudentError.StudentNotFound }
-        it
-    }
+fun ensureStudentExists(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
+    ensureNotNull(
+        es.findEvent<StudentRegistered>(
+            it.student.seq,
+            StudentRegisteredEvent.NAME,
+        )
+    ) { UpdateStudentError.StudentNotFound }
+    it
 }
 
-fun ensureHasUpdateFields() = CommandProcessor<UpdateStudent> {
-    either {
-        ensure(it.firstName != null || it.lastName != null)
-        { UpdateStudentError.NothingToUpdate }
-        it
-    }
+fun ensureHasUpdateFields() = commandProcessor<UpdateStudent> {
+    ensure(it.firstName != null || it.lastName != null)
+    { UpdateStudentError.NothingToUpdate }
+    it
 }
 
 operator fun UpdateStudent.invoke(es: EventStoreRepo) =

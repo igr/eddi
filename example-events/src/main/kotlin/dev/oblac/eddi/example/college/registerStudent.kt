@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college
 
-import arrow.core.raise.either
 import arrow.core.raise.ensure
 import dev.oblac.eddi.*
 import java.time.Instant
@@ -27,16 +26,14 @@ sealed interface RegisterStudentError : CommandError {
     }
 }
 
-fun ensureUniqueEmail(es: EventStoreRepo) = CommandProcessor<RegisterStudent> {
-    either {
-        ensure(
-            es.findEvents<StudentRegistered>(
-                StudentRegisteredEvent.NAME,
-                mapOf("email" to it.email)
-            ).isEmpty()
-        ) { RegisterStudentError.StudentAlreadyExist }
-        it
-    }
+fun ensureUniqueEmail(es: EventStoreRepo) = commandProcessor<RegisterStudent> {
+    ensure(
+        es.findEvents<StudentRegistered>(
+            StudentRegisteredEvent.NAME,
+            mapOf("email" to it.email)
+        ).isEmpty()
+    ) { RegisterStudentError.StudentAlreadyExist }
+    it
 }
 
 

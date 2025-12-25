@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college
 
-import arrow.core.raise.either
 import arrow.core.raise.ensure
 import dev.oblac.eddi.*
 import java.time.Instant
@@ -23,16 +22,15 @@ sealed interface PublishCourseError : CommandError {
     object CourseAlreadyExists : PublishCourseError
 }
 
-fun ensureUniqueCourse(es: EventStoreRepo) = CommandProcessor<PublishCourse> {
-    either {
-        ensure(
-            es.findEvents<CoursePublished>(
-                CoursePublishedEvent.NAME,
-                mapOf("courseName" to it.courseName)
-            ).isEmpty()
-        ) { PublishCourseError.CourseAlreadyExists }
-        it
-    }
+fun ensureUniqueCourse(es: EventStoreRepo) = commandProcessor<PublishCourse> {
+    ensure(
+        es.findEvents<CoursePublished>(
+            CoursePublishedEvent.NAME,
+            mapOf("courseName" to it.courseName)
+        ).isEmpty()
+    ) { PublishCourseError.CourseAlreadyExists }
+    it
+
 }
 
 operator fun PublishCourse.invoke(es: EventStoreRepo) =
