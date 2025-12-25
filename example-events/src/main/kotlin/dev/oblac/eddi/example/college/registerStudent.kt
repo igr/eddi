@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college
 
-import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import dev.oblac.eddi.*
@@ -28,18 +27,17 @@ sealed interface RegisterStudentError : CommandError {
     }
 }
 
-fun ensureUniqueEmail(es: EventStoreRepo): (RegisterStudent) -> Either<RegisterStudentError, RegisterStudent> =
-    {
-        either {
-            ensure(
-                es.findEvents<StudentRegistered>(
-                    StudentRegisteredEvent.NAME,
-                    mapOf("email" to it.email)
-                ).isEmpty()
-            ) { RegisterStudentError.StudentAlreadyExist }
-            it
-        }
+fun ensureUniqueEmail(es: EventStoreRepo) = CommandProcessor<RegisterStudent> {
+    either {
+        ensure(
+            es.findEvents<StudentRegistered>(
+                StudentRegisteredEvent.NAME,
+                mapOf("email" to it.email)
+            ).isEmpty()
+        ) { RegisterStudentError.StudentAlreadyExist }
+        it
     }
+}
 
 
 operator fun RegisterStudent.invoke(es: EventStoreRepo) =

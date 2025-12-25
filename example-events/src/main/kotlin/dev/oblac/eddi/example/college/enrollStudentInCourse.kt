@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college
 
-import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
@@ -37,58 +36,54 @@ sealed interface EnrollStudentInCourseError : CommandError {
     }
 }
 
-fun ensureEnrollStudentExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
-    {
-        either {
-            ensureNotNull(
-                es.findEvent<StudentRegistered>(
-                    it.student.seq,
-                    StudentRegisteredEvent.NAME,
-                )
-            ) { EnrollStudentInCourseError.StudentNotFound(it.student) }
-            it
-        }
+fun ensureEnrollStudentExists(es: EventStoreRepo) = CommandProcessor<EnrollStudentInCourse> {
+    either {
+        ensureNotNull(
+            es.findEvent<StudentRegistered>(
+                it.student.seq,
+                StudentRegisteredEvent.NAME,
+            )
+        ) { EnrollStudentInCourseError.StudentNotFound(it.student) }
+        it
     }
+}
 
-fun ensureCourseExists(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
-    {
-        either {
-            ensureNotNull(
-                es.findEvent<CoursePublished>(
-                    it.course.seq,
-                    CoursePublishedEvent.NAME,
-                )
-            ) { EnrollStudentInCourseError.CourseNotFound(it.course) }
-            it
-        }
+fun ensureCourseExists(es: EventStoreRepo) = CommandProcessor<EnrollStudentInCourse> {
+    either {
+        ensureNotNull(
+            es.findEvent<CoursePublished>(
+                it.course.seq,
+                CoursePublishedEvent.NAME,
+            )
+        ) { EnrollStudentInCourseError.CourseNotFound(it.course) }
+        it
     }
+}
 
-fun ensureNotAlreadyEnrolled(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
-    {
-        either {
-            ensure(
-                es.findEventByMultipleTags<StudentEnrolledInCourse>(
-                    StudentEnrolledInCourseEvent.NAME,
-                    StudentRegisteredTag(it.student.seq),
-                    CoursePublishedTag(it.course.seq)
-                ) == null
-            ) { EnrollStudentInCourseError.AlreadyEnrolled(it.student) }
-            it
-        }
+fun ensureNotAlreadyEnrolled(es: EventStoreRepo) = CommandProcessor<EnrollStudentInCourse> {
+    either {
+        ensure(
+            es.findEventByMultipleTags<StudentEnrolledInCourse>(
+                StudentEnrolledInCourseEvent.NAME,
+                StudentRegisteredTag(it.student.seq),
+                CoursePublishedTag(it.course.seq)
+            ) == null
+        ) { EnrollStudentInCourseError.AlreadyEnrolled(it.student) }
+        it
     }
+}
 
-fun ensureTuitionPaid(es: EventStoreRepo): (EnrollStudentInCourse) -> Either<EnrollStudentInCourseError, EnrollStudentInCourse> =
-    {
-        either {
-            ensure(
-                es.findEventByTag(
-                    TuitionPaidEvent.NAME,
-                    StudentRegisteredTag(it.student.seq)
-                ) != null
-            ) { EnrollStudentInCourseError.TuitionNotPaid(it.student) }
-            it
-        }
+fun ensureTuitionPaid(es: EventStoreRepo) = CommandProcessor<EnrollStudentInCourse> {
+    either {
+        ensureNotNull(
+            es.findEventByTag(
+                TuitionPaidEvent.NAME,
+                StudentRegisteredTag(it.student.seq)
+            )
+        ) { EnrollStudentInCourseError.TuitionNotPaid(it.student) }
+        it
     }
+}
 
 operator fun EnrollStudentInCourse.invoke(es: EventStoreRepo) =
     process(this) {

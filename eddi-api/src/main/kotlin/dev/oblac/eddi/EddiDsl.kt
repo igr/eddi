@@ -12,11 +12,11 @@ annotation class CommandDsl
 
 @CommandDsl
 class CommandScope<C : Command, E: Event>(val command: C) {
-    internal val validators = mutableListOf<(C) -> Either<CommandError, C>>()
+    internal val processors = mutableListOf<CommandProcessor<C>>()
     internal var eventMapper: ((C) -> E)? = null
 
-    operator fun ((C) -> Either<CommandError, C>).unaryPlus() {
-        validators += this
+    operator fun (CommandProcessor<C>).unaryPlus() {
+        processors += this
     }
 
     fun emit(mapper: C.() -> E) {
@@ -29,8 +29,8 @@ fun <C : Command, E : Event> process(
     block: CommandScope<C, E>.() -> Unit
 ): Either<CommandError, E> {
     val scope = CommandScope<C, E>(command).apply(block)
-    return scope.validators
-        .fold(command.right() as Either<CommandError, C>) { acc, v -> acc.flatMap(v) }
+    return scope.processors
+        .fold(command.right() as Either<CommandError, C>) { acc, v -> acc.flatMap { v(it) } }
         .map {
             scope.eventMapper!!(it)
         }

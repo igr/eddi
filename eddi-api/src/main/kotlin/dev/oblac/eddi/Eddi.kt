@@ -5,13 +5,22 @@ import arrow.core.right
 import kotlinx.coroutines.*
 import java.util.*
 
+/**
+ * Generic event listener functional interface.
+ * Implementations of this interface can handle events wrapped in [EventEnvelope]s.
+ */
 fun interface EventListener {
     operator fun invoke(envelope: EventEnvelope<Event>)
 }
 
-interface CommandHandler<R> {
+fun interface CommandHandler<R> {
     operator fun invoke(command: Command): Either<CommandError, R>
 }
+
+fun interface CommandProcessor<C : Command> {
+    operator fun invoke(command: C): Either<CommandError, C>
+}
+
 
 class AsyncCommandHandler<R>(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
