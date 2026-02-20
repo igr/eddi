@@ -7,12 +7,17 @@ import java.time.Instant
 
 data class UpdateStudent(
     val student: StudentRegisteredTag,
+    val last: StudentUpdatedTag,
     val firstName: String?,
     val lastName: String?
 ) : Command
 
+@JvmInline
+value class StudentUpdatedTag(override val seq: Seq) : Tag<StudentUpdated>
+
 data class StudentUpdated(
     val student: StudentRegisteredTag,
+    val last: StudentUpdatedTag,
     val firstName: String?,
     val lastName: String?,
     val updatedAt: Instant = Instant.now()
@@ -25,6 +30,10 @@ sealed interface UpdateStudentError : CommandError {
 
     data object StudentNotFound : UpdateStudentError {
         override fun toString(): String = "Student not found"
+    }
+
+    data object ConflictDetected : UpdateStudentError {
+        override fun toString(): String = "Conflict detected: student was updated by another process"
     }
 }
 
@@ -44,9 +53,28 @@ fun ensureHasUpdateFields() = commandProcessor<UpdateStudent> {
     it
 }
 
+fun ensureNoConflict(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
+    val latestUpdate = es.findEventByMultipleTags<StudentUpdated>(
+        StudentUpdatedEvent.NAME,
+        it.student   // find StudentUpdated event tagged with this student
+    )
+    if (latestUpdate != null) {
+        ensure(latestUpdate.sequence == it.last.seq) {
+            UpdateStudentError.ConflictDetected
+        }
+    } else {
+        ensure(it.last.seq == Seq.ZERO) {
+            UpdateStudentError.ConflictDetected
+        }
+    }
+    it
+}
+
+
 operator fun UpdateStudent.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureStudentExists(es)
         +ensureHasUpdateFields()
-        emit { StudentUpdated(student, firstName, lastName) }
+        +ensureNoConflict(es) // optimistic locking check
+        emit { StudentUpdated(student, last, firstName, lastName) }
     }

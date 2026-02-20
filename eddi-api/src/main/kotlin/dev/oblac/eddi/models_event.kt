@@ -18,6 +18,7 @@ value class Seq(val value: ULong) {
 
 fun ULong.toSeq() = Seq(this)
 fun Long.toSeq() = Seq.of(this)
+fun String.toSeq(): Seq = toLongOrNull()?.toSeq() ?: error("Invalid sequence number: $this")
 
 
 @JvmInline

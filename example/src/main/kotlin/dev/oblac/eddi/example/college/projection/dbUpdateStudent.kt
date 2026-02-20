@@ -16,5 +16,6 @@ fun dbUpdateStudent(envelope: EventEnvelope<StudentUpdated>): Int = transaction 
         event.lastName?.let { lastName ->
             it[StudentTable.lastName] = lastName
         }
+        it[StudentTable.last] = envelope.sequence.value
     }
 }

@@ -57,6 +57,10 @@ fun Routing.pageStudentEdit() {
                         button(type = ButtonType.submit) {
                             +"Update Student"
                         }
+                        input(type=InputType.hidden) {
+                            name = "last"
+                            value = student.last.value.toString()
+                        }
                         div {
                             id = "status"
                         }

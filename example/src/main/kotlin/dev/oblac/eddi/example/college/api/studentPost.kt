@@ -2,9 +2,11 @@ package dev.oblac.eddi.example.college.api
 
 import dev.oblac.eddi.example.college.Main
 import dev.oblac.eddi.example.college.StudentRegisteredTag
+import dev.oblac.eddi.example.college.StudentUpdatedTag
 import dev.oblac.eddi.example.college.UpdateStudent
 import dev.oblac.eddi.example.college.projection.dbFindStudentById
 import dev.oblac.eddi.json.Json
+import dev.oblac.eddi.toSeq
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -13,7 +15,8 @@ import java.util.*
 
 data class StudentUpdateRequest(
     val firstName: String,
-    val lastName: String
+    val lastName: String,
+    val last: String
 )
 
 
@@ -28,10 +31,11 @@ fun Routing.apiStudent() {
         val seq = student.seq
         val firstName = node.firstName
         val lastName = node.lastName
+        val last = node.last.toSeq()
 
         Main.launch(
             UpdateStudent(
-                StudentRegisteredTag(seq), firstName, lastName
+                StudentRegisteredTag(seq), StudentUpdatedTag(last), firstName, lastName
             )
         ).fold(
             ifLeft = {
@@ -47,3 +51,4 @@ fun Routing.apiStudent() {
         )
     }
 }
+

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS college.student
 (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     seq           BIGINT      NOT NULL REFERENCES eddi.events (seq),
+    last          BIGINT      NULL REFERENCES eddi.events (seq),
     first_name    TEXT        NOT NULL,
     last_name     TEXT        NOT NULL,
     email         TEXT        NOT NULL UNIQUE,
