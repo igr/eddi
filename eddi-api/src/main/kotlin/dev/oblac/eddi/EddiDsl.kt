@@ -31,8 +31,7 @@ fun <C : Command, E : Event> process(
     val scope = CommandScope<C, E>(command).apply(block)
     return scope.processors
         .fold(command.right() as Either<CommandError, C>) { acc, v -> acc.flatMap { v(it) } }
-        .map {
-            scope.eventMapper!!(it)
-        }
+        .onLeft { println("⚠️ Command ${command::class.simpleName} failed: $it") }
+        .map { scope.eventMapper!!(it) }
 }
 
