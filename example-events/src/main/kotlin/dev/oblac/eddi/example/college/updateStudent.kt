@@ -44,13 +44,11 @@ fun ensureStudentExists(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
             StudentRegisteredEvent.NAME,
         )
     ) { UpdateStudentError.StudentNotFound }
-    it
 }
 
 fun ensureHasUpdateFields() = commandProcessor<UpdateStudent> {
     ensure(it.firstName != null || it.lastName != null)
     { UpdateStudentError.NothingToUpdate }
-    it
 }
 
 fun ensureNoConflict(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
@@ -58,18 +56,11 @@ fun ensureNoConflict(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
         StudentUpdatedEvent.NAME,
         it.student   // find StudentUpdated event tagged with this student
     )
-    if (latestUpdate != null) {
-        ensure(latestUpdate.sequence == it.last.seq) {
-            UpdateStudentError.ConflictDetected
-        }
-    } else {
-        ensure(it.last.seq == Seq.ZERO) {
-            UpdateStudentError.ConflictDetected
-        }
+    val expectedSeq = latestUpdate?.sequence ?: Seq.ZERO
+    ensure(it.last.seq == expectedSeq) {
+        UpdateStudentError.ConflictDetected
     }
-    it
 }
-
 
 operator fun UpdateStudent.invoke(es: EventStoreRepo) =
     process(this) {

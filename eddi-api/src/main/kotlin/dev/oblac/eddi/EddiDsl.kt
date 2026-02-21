@@ -4,13 +4,6 @@ import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.right
 
-/**
- * Processes a command by applying a series of validators and then generating an event if all validations pass.
- */
-@DslMarker
-annotation class CommandDsl
-
-@CommandDsl
 class CommandScope<C : Command, E: Event>(val command: C) {
     internal val processors = mutableListOf<CommandProcessor<C>>()
     internal var eventMapper: ((C) -> E)? = null

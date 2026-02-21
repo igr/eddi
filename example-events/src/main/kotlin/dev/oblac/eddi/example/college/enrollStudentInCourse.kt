@@ -42,7 +42,6 @@ fun ensureEnrollStudentExists(es: EventStoreRepo) = commandProcessor<EnrollStude
             StudentRegisteredEvent.NAME,
         )
     ) { EnrollStudentInCourseError.StudentNotFound(it.student) }
-    it
 }
 
 fun ensureCourseExists(es: EventStoreRepo) = commandProcessor<EnrollStudentInCourse> {
@@ -52,7 +51,6 @@ fun ensureCourseExists(es: EventStoreRepo) = commandProcessor<EnrollStudentInCou
             CoursePublishedEvent.NAME,
         )
     ) { EnrollStudentInCourseError.CourseNotFound(it.course) }
-    it
 }
 
 
@@ -64,7 +62,6 @@ fun ensureNotAlreadyEnrolled(es: EventStoreRepo) = commandProcessor<EnrollStuden
             CoursePublishedTag(it.course.seq)
         ) == null
     ) { EnrollStudentInCourseError.AlreadyEnrolled(it.student) }
-    it
 }
 
 
@@ -75,7 +72,6 @@ fun ensureTuitionPaid(es: EventStoreRepo) = commandProcessor<EnrollStudentInCour
             StudentRegisteredTag(it.student.seq)
         )
     ) { EnrollStudentInCourseError.TuitionNotPaid(it.student) }
-    it
 }
 
 

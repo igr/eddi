@@ -29,8 +29,6 @@ fun ensureUniqueCourse(es: EventStoreRepo) = commandProcessor<PublishCourse> {
             mapOf("courseName" to it.courseName)
         ).isEmpty()
     ) { PublishCourseError.CourseAlreadyExists }
-    it
-
 }
 
 operator fun PublishCourse.invoke(es: EventStoreRepo) =

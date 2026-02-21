@@ -27,7 +27,7 @@ operator fun EventListener.plus(listener: EventListener) = EventListener { envel
  * Creates a [CommandProcessor] from a lambda.
  */
 inline fun <C : Command> commandProcessor(
-    crossinline block: Raise<CommandError>.(C) -> C
+    crossinline block: Raise<CommandError>.(C) -> Unit
 ): CommandProcessor<C> = CommandProcessor { command ->
-    either { block(command) }
+    either { block(command); command }
 }

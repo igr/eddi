@@ -33,7 +33,6 @@ fun ensureUniqueEmail(es: EventStoreRepo) = commandProcessor<RegisterStudent> {
             mapOf("email" to it.email)
         ).isEmpty()
     ) { RegisterStudentError.StudentAlreadyExist }
-    it
 }
 
 

@@ -26,7 +26,6 @@ fun ensurePayTuitionStudentExists(es: EventStoreRepo) = commandProcessor<PayTuit
             StudentRegisteredEvent.NAME,
         )
     ) { PayTuitionError.StudentNotFound }
-    it
 }
 
 fun ensureTuitionNotAlreadyPaid(es: EventStoreRepo) = commandProcessor<PayTuition> {
@@ -36,7 +35,6 @@ fun ensureTuitionNotAlreadyPaid(es: EventStoreRepo) = commandProcessor<PayTuitio
             StudentRegisteredTag(it.student.seq)
         ) == null
     ) { PayTuitionError.TuitionAlreadyPaid }
-    it
 }
 
 operator fun PayTuition.invoke(es: EventStoreRepo) =
