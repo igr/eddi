@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college.projection
 
-import dev.oblac.eddi.Seq
 import dev.oblac.eddi.example.college.projection.db.CourseEnrolledTable
 import dev.oblac.eddi.example.college.projection.db.StudentTable
 import dev.oblac.eddi.toSeq
@@ -26,7 +25,7 @@ fun dbFindCourseStudents(courseId: UUID): CourseStudents = transaction {
             Student(
                 id = row[StudentTable.id],
                 seq = row[StudentTable.seq].toSeq(),
-                last = row[StudentTable.last]?.toSeq() ?: Seq.ZERO,
+                last = row[StudentTable.last]?.toSeq(),
                 firstName = row[StudentTable.firstName],
                 lastName = row[StudentTable.lastName],
                 email = row[StudentTable.email],

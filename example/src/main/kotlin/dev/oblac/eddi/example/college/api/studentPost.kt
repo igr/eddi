@@ -16,7 +16,7 @@ import java.util.*
 data class StudentUpdateRequest(
     val firstName: String,
     val lastName: String,
-    val last: String
+    val last: String?
 )
 
 
@@ -31,11 +31,15 @@ fun Routing.apiStudent() {
         val seq = student.seq
         val firstName = node.firstName
         val lastName = node.lastName
-        val last = node.last.toSeq()
+        val last = node.last?.toSeq()
 
         Main.launch(
             UpdateStudent(
-                StudentRegisteredTag(seq), StudentUpdatedTag(last), firstName, lastName
+                StudentRegisteredTag(seq),
+                // todo add utility for this if
+                if (last != null) StudentUpdatedTag(last) else null,
+                firstName,
+                lastName
             )
         ).fold(
             ifLeft = {

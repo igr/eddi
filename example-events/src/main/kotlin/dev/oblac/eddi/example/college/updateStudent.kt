@@ -7,7 +7,7 @@ import java.time.Instant
 
 data class UpdateStudent(
     val student: StudentRegisteredTag,
-    val last: StudentUpdatedTag,
+    val last: StudentUpdatedTag?,   // the last known update sequence, used for optimistic locking
     val firstName: String?,
     val lastName: String?
 ) : Command
@@ -17,7 +17,7 @@ value class StudentUpdatedTag(override val seq: Seq) : Tag<StudentUpdated>
 
 data class StudentUpdated(
     val student: StudentRegisteredTag,
-    val last: StudentUpdatedTag,
+    val last: StudentUpdatedTag?,   // there may be no previous update, so this is nullable
     val firstName: String?,
     val lastName: String?,
     val updatedAt: Instant = Instant.now()
@@ -56,8 +56,8 @@ fun ensureNoConflict(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
         StudentUpdatedEvent.NAME,
         it.student   // find StudentUpdated event tagged with this student
     )
-    val expectedSeq = latestUpdate?.sequence ?: Seq.ZERO
-    ensure(it.last.seq == expectedSeq) {
+    val expectedSeq = latestUpdate?.sequence
+    ensure(expectedSeq == it.last?.seq) {
         UpdateStudentError.ConflictDetected
     }
 }
