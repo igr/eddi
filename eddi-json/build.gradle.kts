@@ -8,6 +8,7 @@ tasks.test {
 
 dependencies {
     implementation(project(":eddi-api"))
+    implementation(libs.kotlin.reflect)
 
     // JSON serialization
     implementation(libs.jackson.kotlin)
