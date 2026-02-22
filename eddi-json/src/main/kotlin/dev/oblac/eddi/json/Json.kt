@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import dev.oblac.eddi.EventName
 import dev.oblac.eddi.Ref
+import dev.oblac.eddi.Seq
 import dev.oblac.eddi.toSeq
 import kotlin.reflect.KClass
 
@@ -31,16 +32,31 @@ private class RefDeserializer : JsonDeserializer<Ref>() {
     }
 }
 
+private class SeqSerializer : JsonSerializer<Seq>() {
+    override fun serialize(value: Seq, gen: JsonGenerator, serializers: SerializerProvider) {
+        gen.writeNumber(value.toLong())
+    }
+}
+
+private class SeqDeserializer : JsonDeserializer<Seq>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Seq {
+        return p.longValue.toSeq()
+    }
+}
+
 object Json {
-    private val tagModule = SimpleModule()
-        .addSerializer(Ref::class.java, RefSerializer())
-        .addDeserializer(Ref::class.java, RefDeserializer())
+    private val eddiModule = SimpleModule("eddi").apply {
+        addSerializer(Ref::class.java, RefSerializer())
+        addDeserializer(Ref::class.java, RefDeserializer())
+        addSerializer(Seq::class.java, SeqSerializer())
+        addDeserializer(Seq::class.java, SeqDeserializer())
+    }
 
 
     val objectMapper: ObjectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
         .registerKotlinModule()
-        .registerModule(tagModule)
+        .registerModule(eddiModule)
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     fun <T> toJson(value: T): String =

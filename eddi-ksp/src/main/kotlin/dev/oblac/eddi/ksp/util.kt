@@ -15,15 +15,24 @@ internal fun simpleClassNameOf(qualifiedName: String): String {
     }
 }
 
-internal fun tagPropertiesOfRecord(eventClass: KSClassDeclaration): List<String> =
+internal data class TagProperty(val name: String, val tagType: String, val nullable: Boolean)
+
+/**
+ * Returns tag properties for constructor parameters that implement [Tag].
+ */
+internal fun tagPropertiesOfRecord(eventClass: KSClassDeclaration): List<TagProperty> =
     (eventClass.primaryConstructor?.parameters
-        ?.filter { param ->
+        ?.mapNotNull { param ->
             val paramType = param.type.resolve()
             val declaration = paramType.declaration
-            declaration.qualifiedName?.asString() == TAG_INTERFACE_NAME ||
+            val isTag = declaration.qualifiedName?.asString() == TAG_INTERFACE_NAME ||
                     (declaration as? KSClassDeclaration)?.superTypes?.any { superType ->
                         superType.resolve().declaration.qualifiedName?.asString() == TAG_INTERFACE_NAME
                     } == true
+            if (isTag) {
+                val name = param.name?.asString() ?: return@mapNotNull null
+                val tagType = declaration.qualifiedName?.asString() ?: return@mapNotNull null
+                TagProperty(name, tagType, paramType.isMarkedNullable)
+            } else null
         }
-        ?.mapNotNull { it.name?.asString() }
         ?: emptyList())

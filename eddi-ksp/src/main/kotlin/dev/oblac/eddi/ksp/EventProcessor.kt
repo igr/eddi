@@ -140,11 +140,24 @@ class EventProcessor(
         packageName: String,
         className: String,
         targetClassName: String,
-        tagPropertiesOfEvent: List<String>
+        tagPropertiesOfEvent: List<TagProperty>
     ) {
 
-        val refCtors = tagPropertiesOfEvent.joinToString(", ") {
-            "dev.oblac.eddi.Events.refOf(event.$it)"
+        val refExprs = tagPropertiesOfEvent.map { tag ->
+            val eventType = tagImplementations[tag.tagType]
+                ?: error("Tag type ${tag.tagType} is not registered in tagImplementations")
+            val eventMetaName = simpleClassNameOf(eventType) + "Event"
+            if (tag.nullable) {
+                "event.${tag.name}?.let { dev.oblac.eddi.Ref($eventMetaName.NAME, it.seq) }"
+            } else {
+                "dev.oblac.eddi.Ref($eventMetaName.NAME, event.${tag.name}.seq)"
+            }
+        }
+
+        val refCtors = if (refExprs.any { it.contains("?.let") }) {
+            "listOfNotNull(${refExprs.joinToString(", ")}).toTypedArray()"
+        } else {
+            "arrayOf(${refExprs.joinToString(", ")})"
         }
 
         val tagsForEventClass = tagImplementations
@@ -170,7 +183,7 @@ class EventProcessor(
                 |    override val NAME = EventName.of(CLASS) 
                 |
                 |    override fun refs(event: $className): Array<dev.oblac.eddi.Ref> =
-                |        arrayOf($refCtors)
+                |        $refCtors
                 |}
                 |
             """.trimMargin() +
