@@ -69,3 +69,19 @@ operator fun UpdateStudent.invoke(es: EventStoreRepo) =
         +ensureNoConflict(es) // optimistic locking check
         emit { StudentUpdated(student, last, firstName, lastName) }
     }
+
+/**
+ * Meta companion class for [StudentUpdated].
+ */
+object StudentUpdatedEvent : EventMeta<StudentUpdated> {
+
+    override val CLASS = StudentUpdated::class
+    override val NAME = EventName.of(CLASS)
+
+    override fun refs(event: StudentUpdated): Array<Ref> = listOfNotNull(
+        Ref(StudentRegisteredEvent.NAME, event.student.seq),
+        event.last?.let { Ref(StudentUpdatedEvent.NAME, it.seq) }
+    ).toTypedArray()
+}
+
+fun EventEnvelope<StudentUpdated>.tag() = StudentUpdatedTag(this.sequence)

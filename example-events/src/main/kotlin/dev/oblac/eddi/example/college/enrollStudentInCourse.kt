@@ -83,3 +83,17 @@ operator fun EnrollStudentInCourse.invoke(es: EventStoreRepo) =
         +ensureTuitionPaid(es)
         emit { StudentEnrolledInCourse(student, course) }
     }
+
+/**
+ * Meta companion class for [StudentEnrolledInCourse].
+ */
+object StudentEnrolledInCourseEvent : EventMeta<StudentEnrolledInCourse> {
+
+    override val CLASS = StudentEnrolledInCourse::class
+    override val NAME = EventName.of(CLASS)
+
+    override fun refs(event: StudentEnrolledInCourse): Array<Ref> = arrayOf(
+        Ref(StudentRegisteredEvent.NAME, event.student.seq),
+        Ref(CoursePublishedEvent.NAME, event.course.seq)
+    )
+}

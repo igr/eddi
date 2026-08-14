@@ -36,3 +36,16 @@ operator fun PublishCourse.invoke(es: EventStoreRepo) =
         +ensureUniqueCourse(es)
         emit { CoursePublished(courseName, instructor) }
     }
+
+/**
+ * Meta companion class for [CoursePublished].
+ */
+object CoursePublishedEvent : EventMeta<CoursePublished> {
+
+    override val CLASS = CoursePublished::class
+    override val NAME = EventName.of(CLASS)
+
+    override fun refs(event: CoursePublished): Array<Ref> = emptyArray()
+}
+
+fun EventEnvelope<CoursePublished>.tag() = CoursePublishedTag(this.sequence)

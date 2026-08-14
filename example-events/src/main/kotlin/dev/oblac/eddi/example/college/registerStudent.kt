@@ -41,3 +41,16 @@ operator fun RegisterStudent.invoke(es: EventStoreRepo) =
         +ensureUniqueEmail(es)
         emit { StudentRegistered(firstName, lastName, email) }
     }
+
+/**
+ * Meta companion class for [StudentRegistered].
+ */
+object StudentRegisteredEvent : EventMeta<StudentRegistered> {
+
+    override val CLASS = StudentRegistered::class
+    override val NAME = EventName.of(CLASS)
+
+    override fun refs(event: StudentRegistered): Array<Ref> = emptyArray()
+}
+
+fun EventEnvelope<StudentRegistered>.tag() = StudentRegisteredTag(this.sequence)
