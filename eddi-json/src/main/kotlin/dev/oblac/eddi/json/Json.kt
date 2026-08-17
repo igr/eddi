@@ -13,11 +13,12 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.jvmErasure
+import java.util.UUID
 
 private class RefSerializer : JsonSerializer<Ref>() {
     override fun serialize(value: Ref, gen: JsonGenerator, serializers: SerializerProvider) {
         gen.writeStartObject()
-        gen.writeNumberField(value.name.value, value.seq.toLong())
+        gen.writeStringField(value.name.value, value.id.toString())
         gen.writeEndObject()
     }
 }
@@ -28,7 +29,7 @@ private class RefDeserializer : JsonDeserializer<Ref>() {
         val field = node.fields().next()
         return Ref(
             name = EventName(field.key),
-            seq = field.value.asLong().toSeq()
+            id = UUID.fromString(field.value.asText())
         )
     }
 }
@@ -67,7 +68,7 @@ object Json {
      * For [Event] classes, uses Java reflection to construct instances directly,
      * bypassing both Jackson's Kotlin module and Kotlin reflection's
      * [ValueClassAwareCaller], which both fail with nested value classes
-     * (Tag wraps Seq wraps ULong).
+     * (Tag wraps UUID).
      */
     @Suppress("UNCHECKED_CAST")
     fun <T> fromNode(node: JsonNode, clazz: Class<T>): T {
@@ -125,14 +126,15 @@ object Json {
                     error("Missing required non-nullable parameter: ${param.name}")
                 }
             } else if (Tag::class.java.isAssignableFrom(paramClass.java)) {
-                if (jvmType == Long::class.javaPrimitiveType || jvmType == Long::class.java) {
-                    // Non-nullable value class, flattened to long at JVM level
-                    jvmArgs.add(jsonValue.asLong())
+                val uuid = UUID.fromString(jsonValue.asText())
+                if (jvmType == UUID::class.java) {
+                    // Non-nullable value class, flattened to UUID at JVM level
+                    jvmArgs.add(uuid)
                 } else {
                     // Nullable value class, boxed at JVM level
                     val tagCtor = paramClass.java.declaredConstructors.first { it.parameterCount == 1 }
                     tagCtor.isAccessible = true
-                    jvmArgs.add(tagCtor.newInstance(jsonValue.asLong()))
+                    jvmArgs.add(tagCtor.newInstance(uuid))
                 }
             } else {
                 jvmArgs.add(objectMapper.treeToValue(jsonValue, paramClass.java))
