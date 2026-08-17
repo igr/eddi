@@ -4,15 +4,11 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import dev.oblac.eddi.*
 import kotlin.reflect.KClass
-import kotlin.reflect.KParameter
-import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.jvm.jvmErasure
 import java.util.UUID
 
 private class RefSerializer : JsonSerializer<Ref>() {
@@ -65,101 +61,9 @@ object Json {
 
     /**
      * Deserializes a [JsonNode] into the given class.
-     * For [Event] classes, uses Java reflection to construct instances directly,
-     * bypassing both Jackson's Kotlin module and Kotlin reflection's
-     * [ValueClassAwareCaller], which both fail with nested value classes
-     * (Tag wraps UUID).
      */
-    @Suppress("UNCHECKED_CAST")
-    fun <T> fromNode(node: JsonNode, clazz: Class<T>): T {
-        if (!Event::class.java.isAssignableFrom(clazz)) {
-            return objectMapper.treeToValue(node, clazz)
-        }
-
-        val kClass = (clazz as Class<Any>).kotlin
-        val kCtor = kClass.primaryConstructor
-            ?: return objectMapper.treeToValue(node, clazz)
-        val kParams = kCtor.parameters
-
-        // Only use custom deserialization for events that have Tag properties
-        val hasTagParams = kParams.any { Tag::class.java.isAssignableFrom(it.type.jvmErasure.java) }
-        if (!hasTagParams) {
-            return objectMapper.treeToValue(node, clazz)
-        }
-
-        val objNode = node as ObjectNode
-
-        // Find the synthetic default-values constructor:
-        // (params..., int defaultsMask, DefaultConstructorMarker)
-        // Distinguished from the hidden-constructor bridge (params..., DefaultConstructorMarker)
-        // by having int as the second-to-last parameter.
-        val defaultsCtor = clazz.declaredConstructors.find { ctor ->
-            val types = ctor.parameterTypes
-            types.size >= 2 &&
-                types[types.size - 1] == kotlin.jvm.internal.DefaultConstructorMarker::class.java &&
-                types[types.size - 2] == Int::class.javaPrimitiveType
-        }
-
-        val jvmCtor = defaultsCtor
-            ?: clazz.declaredConstructors.first { it.parameterCount == kParams.size }
-        jvmCtor.isAccessible = true
-
-        val jvmParamTypes = jvmCtor.parameterTypes
-        val hasDefaults = defaultsCtor != null
-
-        var defaultsMask = 0
-        val jvmArgs = mutableListOf<Any?>()
-
-        for ((i, param) in kParams.withIndex()) {
-            val paramClass = param.type.jvmErasure
-            val jsonValue = objNode.get(param.name!!)
-            val jvmType = jvmParamTypes[i]
-
-            if (jsonValue == null || jsonValue.isNull) {
-                if (param.isOptional && hasDefaults) {
-                    // use default value: set mask bit and pass placeholder
-                    defaultsMask = defaultsMask or (1 shl i)
-                    jvmArgs.add(jvmDefault(jvmType))
-                } else if (param.type.isMarkedNullable) {
-                    jvmArgs.add(null)
-                } else {
-                    error("Missing required non-nullable parameter: ${param.name}")
-                }
-            } else if (Tag::class.java.isAssignableFrom(paramClass.java)) {
-                val uuid = UUID.fromString(jsonValue.asText())
-                if (jvmType == UUID::class.java) {
-                    // Non-nullable value class, flattened to UUID at JVM level
-                    jvmArgs.add(uuid)
-                } else {
-                    // Nullable value class, boxed at JVM level
-                    val tagCtor = paramClass.java.declaredConstructors.first { it.parameterCount == 1 }
-                    tagCtor.isAccessible = true
-                    jvmArgs.add(tagCtor.newInstance(uuid))
-                }
-            } else {
-                jvmArgs.add(objectMapper.treeToValue(jsonValue, paramClass.java))
-            }
-        }
-
-        if (hasDefaults) {
-            jvmArgs.add(defaultsMask)
-            jvmArgs.add(null) // DefaultConstructorMarker
-        }
-
-        return jvmCtor.newInstance(*jvmArgs.toTypedArray()) as T
-    }
-
-    private fun jvmDefault(type: Class<*>): Any? = when (type) {
-        Long::class.javaPrimitiveType -> 0L
-        Int::class.javaPrimitiveType -> 0
-        Boolean::class.javaPrimitiveType -> false
-        Double::class.javaPrimitiveType -> 0.0
-        Float::class.javaPrimitiveType -> 0f
-        Short::class.javaPrimitiveType -> 0.toShort()
-        Byte::class.javaPrimitiveType -> 0.toByte()
-        Char::class.javaPrimitiveType -> '\u0000'
-        else -> null
-    }
+    fun <T> fromNode(node: JsonNode, clazz: Class<T>): T =
+        objectMapper.treeToValue(node, clazz)
 
     fun jsonToNode(json: String): JsonNode =
         objectMapper.readTree(json)
