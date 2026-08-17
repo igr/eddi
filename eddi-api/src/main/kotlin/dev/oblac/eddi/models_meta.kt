@@ -27,7 +27,7 @@ object Events {
 
     fun refOf(tag: Tag<Event>): Ref {
         val name = klassToName[tag::class] ?: error("Tag ${tag::class.simpleName} is not registered")
-        return Ref(name, tag.seq)
+        return Ref(name, tag.id)
     }
 }
 

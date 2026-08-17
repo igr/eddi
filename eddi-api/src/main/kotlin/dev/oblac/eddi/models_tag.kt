@@ -1,10 +1,12 @@
 package dev.oblac.eddi
 
+import java.util.UUID
+
 /**
  * Event tags.
  */
 interface Tag<out Event> {
-    val seq: Seq
+    val id: UUID
 }
 
 /**
@@ -12,5 +14,5 @@ interface Tag<out Event> {
  */
 data class Ref(
     val name: EventName,
-    val seq: Seq
+    val id: UUID
 )

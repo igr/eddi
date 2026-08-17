@@ -14,9 +14,4 @@ interface EventStoreRepo {
 
 
     fun <T: Event> findEvents(name: EventName, dataFilters: Map<String, String> = mapOf()): List<EventEnvelope<T>>
-
-    /**
-     * Finds a specific event by its sequence ID and name.
-     */
-    fun <T: Event> findEvent(seq: Seq, name: EventName): EventEnvelope<T>?
 }
