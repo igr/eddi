@@ -10,9 +10,10 @@ services:
     ports:
       - "7432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # postgres 18+ wants a single mount here, not at .../data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U eddi_user -d eddi"]
       interval: 10s
       timeout: 5s
       retries: 5
