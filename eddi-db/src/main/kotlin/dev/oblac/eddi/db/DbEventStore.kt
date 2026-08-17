@@ -34,9 +34,6 @@ class DbEventStore : EventStore {
         return dbFindEventsByName(name.value, dataFilters) as List<EventEnvelope<T>>
     }
 
-    override fun <T: Event> findEvent(seq: Seq, name: EventName): EventEnvelope<T>? {
-        return dbFindEventBySeqAndName(seq, name.value) as EventEnvelope<T>?
-    }
 
 
 }

@@ -16,8 +16,8 @@ fun dbFindEventByTag(eventName: EventName, ref: Ref): EventEnvelope<Event>? = tr
         .where { DbEvents.name eq eventName.value }
         .andWhere {
             val key = ref.name.value
-            val value = ref.seq.value
-            val needle = """[{"$key": $value}]"""
+            val value = ref.id
+            val needle = """[{"$key": "$value"}]"""
 
             object : Op<Boolean>() {
                 override fun toQueryBuilder(queryBuilder: QueryBuilder) {
@@ -44,8 +44,8 @@ fun dbFindEventByMultipleTags(eventName: EventName, vararg refs: Ref): EventEnve
             refs.forEach { ref ->
                 andWhere {
                     val key = ref.name.value
-                    val value = ref.seq.value
-                    val needle = """[{"$key": $value}]"""
+                    val value = ref.id
+                    val needle = """[{"$key": "$value"}]"""
 
                     object : Op<Boolean>() {
                         override fun toQueryBuilder(queryBuilder: QueryBuilder) {
