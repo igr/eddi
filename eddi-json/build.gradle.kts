@@ -13,4 +13,7 @@ dependencies {
     // JSON serialization
     implementation(libs.jackson.kotlin)
     implementation(libs.jackson.datatype.jsr310)
+
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

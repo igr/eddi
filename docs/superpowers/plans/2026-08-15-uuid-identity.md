@@ -38,10 +38,22 @@ The repo has zero test sources today. `junit-jupiter-engine` is declared in the 
 
 - [ ] **Step 1: Add `junit-jupiter-api` and a `junit` bundle to the catalog**
 
-In `gradle/libs.versions.toml`, add to `[libraries]` (next to the existing `junit-jupiter-engine` line):
+Gradle 8.14.3 injects its own (older) `junit-platform-launcher`, which cannot discover
+Jupiter 5.12.1 tests — it fails with *"OutputDirectoryProvider not available; probably due
+to unaligned versions of the junit-platform-engine and junit-platform-launcher jars"*. An
+aligned launcher must be added explicitly on the test runtime classpath.
+
+In `gradle/libs.versions.toml`, add to `[versions]`:
+
+```toml
+junit-platform = "1.12.1"
+```
+
+add to `[libraries]` (next to the existing `junit-jupiter-engine` line):
 
 ```toml
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter-engine" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
 ```
 
 and add to `[bundles]`:
@@ -56,12 +68,14 @@ junit = ["junit-jupiter-api", "junit-jupiter-engine"]
 
 ```kotlin
     testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.junit.platform.launcher)
 ```
 
 `eddi-json/build.gradle.kts` — add to the `dependencies` block:
 
 ```kotlin
     testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.junit.platform.launcher)
 ```
 
 `example-events/build.gradle.kts` — add a `dependencies` entry so the file reads:
@@ -74,6 +88,7 @@ plugins {
 dependencies {
     implementation(project(":eddi-api"))
     testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 ```
 
