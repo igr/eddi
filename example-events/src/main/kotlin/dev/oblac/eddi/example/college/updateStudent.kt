@@ -4,19 +4,21 @@ import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import dev.oblac.eddi.*
 import java.time.Instant
+import java.util.UUID
 
 data class UpdateStudent(
-    val student: StudentRegisteredTag,
-    val last: StudentUpdatedTag?,   // the last known update sequence, used for optimistic locking
+    val updateId: StudentUpdatedTag,
+    val student: StudentId,
     val firstName: String?,
     val lastName: String?
 ) : Command
 
 @JvmInline
-value class StudentUpdatedTag(override val seq: Seq) : Tag<StudentUpdated>
+value class StudentUpdatedTag(override val id: UUID) : Tag<StudentUpdated>
 
 data class StudentUpdated(
-    val student: StudentRegisteredTag,
+    val updateId: StudentUpdatedTag,
+    val student: StudentId,
     val last: StudentUpdatedTag?,   // there may be no previous update, so this is nullable
     val firstName: String?,
     val lastName: String?,
@@ -31,17 +33,13 @@ sealed interface UpdateStudentError : CommandError {
     data object StudentNotFound : UpdateStudentError {
         override fun toString(): String = "Student not found"
     }
-
-    data object ConflictDetected : UpdateStudentError {
-        override fun toString(): String = "Conflict detected: student was updated by another process"
-    }
 }
 
 fun ensureStudentExists(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
     ensureNotNull(
-        es.findEvent<StudentRegistered>(
-            it.student.seq,
+        es.findEventByTag<StudentRegistered>(
             StudentRegisteredEvent.NAME,
+            it.student
         )
     ) { UpdateStudentError.StudentNotFound }
 }
@@ -51,23 +49,18 @@ fun ensureHasUpdateFields() = commandProcessor<UpdateStudent> {
     { UpdateStudentError.NothingToUpdate }
 }
 
-fun ensureNoConflict(es: EventStoreRepo) = commandProcessor<UpdateStudent> {
-    val latestUpdate = es.findEventByMultipleTags<StudentUpdated>(
-        StudentUpdatedEvent.NAME,
-        it.student   // find StudentUpdated event tagged with this student
-    )
-    val expectedSeq = latestUpdate?.sequence
-    ensure(expectedSeq == it.last?.seq) {
-        UpdateStudentError.ConflictDetected
-    }
-}
-
 operator fun UpdateStudent.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureStudentExists(es)
         +ensureHasUpdateFields()
-        +ensureNoConflict(es) // optimistic locking check
-        emit { StudentUpdated(student, last, firstName, lastName) }
+        emit {
+            // the previous update of this student, so updates form a chain
+            val last = es.findEventByMultipleTags<StudentUpdated>(
+                StudentUpdatedEvent.NAME,
+                student
+            )?.tag()
+            StudentUpdated(updateId, student, last, firstName, lastName)
+        }
     }
 
 /**
@@ -79,9 +72,10 @@ object StudentUpdatedEvent : EventMeta<StudentUpdated> {
     override val NAME = EventName.of(CLASS)
 
     override fun refs(event: StudentUpdated): Array<Ref> = listOfNotNull(
-        Ref(StudentRegisteredEvent.NAME, event.student.seq),
-        event.last?.let { Ref(StudentUpdatedEvent.NAME, it.seq) }
+        Ref(NAME, event.updateId.id),
+        Ref(StudentRegisteredEvent.NAME, event.student.id),
+        event.last?.let { Ref(NAME, it.id) }
     ).toTypedArray()
 }
 
-fun EventEnvelope<StudentUpdated>.tag() = StudentUpdatedTag(this.sequence)
+fun EventEnvelope<StudentUpdated>.tag() = event.updateId

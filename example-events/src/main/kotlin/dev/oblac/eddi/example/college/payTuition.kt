@@ -6,11 +6,11 @@ import dev.oblac.eddi.*
 import java.time.Instant
 
 data class PayTuition(
-    val student: StudentRegisteredTag,
+    val student: StudentId,
 ) : Command
 
 data class TuitionPaid(
-    val student: StudentRegisteredTag,
+    val student: StudentId,
     val paidAt: Instant = Instant.now(),
 ) : Event
 
@@ -21,9 +21,9 @@ sealed interface PayTuitionError : CommandError {
 
 fun ensurePayTuitionStudentExists(es: EventStoreRepo) = commandProcessor<PayTuition> {
     ensureNotNull(
-        es.findEvent<StudentRegistered>(
-            it.student.seq,
+        es.findEventByTag<StudentRegistered>(
             StudentRegisteredEvent.NAME,
+            it.student
         )
     ) { PayTuitionError.StudentNotFound }
 }
@@ -32,7 +32,7 @@ fun ensureTuitionNotAlreadyPaid(es: EventStoreRepo) = commandProcessor<PayTuitio
     ensure(
         es.findEventByTag(
             TuitionPaidEvent.NAME,
-            StudentRegisteredTag(it.student.seq)
+            it.student
         ) == null
     ) { PayTuitionError.TuitionAlreadyPaid }
 }
@@ -53,6 +53,6 @@ object TuitionPaidEvent : EventMeta<TuitionPaid> {
     override val NAME = EventName.of(CLASS)
 
     override fun refs(event: TuitionPaid): Array<Ref> = arrayOf(
-        Ref(StudentRegisteredEvent.NAME, event.student.seq)
+        Ref(StudentRegisteredEvent.NAME, event.student.id)
     )
 }

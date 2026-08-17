@@ -3,16 +3,19 @@ package dev.oblac.eddi.example.college
 import arrow.core.raise.ensure
 import dev.oblac.eddi.*
 import java.time.Instant
+import java.util.UUID
 
 data class PublishCourse(
+    val courseId: CoursePublishedTag,
     val courseName: String,
     val instructor: String,
 ) : Command
 
 @JvmInline
-value class CoursePublishedTag(override val seq: Seq) : Tag<CoursePublished>
+value class CoursePublishedTag(override val id: UUID) : Tag<CoursePublished>
 
 data class CoursePublished(
+    val courseId: CoursePublishedTag,
     val courseName: String,
     val instructor: String,
     val publishAt: Instant = Instant.now()
@@ -34,7 +37,7 @@ fun ensureUniqueCourse(es: EventStoreRepo) = commandProcessor<PublishCourse> {
 operator fun PublishCourse.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureUniqueCourse(es)
-        emit { CoursePublished(courseName, instructor) }
+        emit { CoursePublished(courseId, courseName, instructor) }
     }
 
 /**
@@ -45,7 +48,9 @@ object CoursePublishedEvent : EventMeta<CoursePublished> {
     override val CLASS = CoursePublished::class
     override val NAME = EventName.of(CLASS)
 
-    override fun refs(event: CoursePublished): Array<Ref> = emptyArray()
+    override fun refs(event: CoursePublished): Array<Ref> = arrayOf(
+        Ref(NAME, event.courseId.id)
+    )
 }
 
-fun EventEnvelope<CoursePublished>.tag() = CoursePublishedTag(this.sequence)
+fun EventEnvelope<CoursePublished>.tag() = event.courseId

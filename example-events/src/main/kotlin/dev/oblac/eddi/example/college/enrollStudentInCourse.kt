@@ -6,49 +6,49 @@ import dev.oblac.eddi.*
 import java.time.Instant
 
 data class EnrollStudentInCourse(
-    val student: StudentRegisteredTag,
+    val student: StudentId,
     val course: CoursePublishedTag,
 ) : Command
 
 data class StudentEnrolledInCourse(
-    val student: StudentRegisteredTag,
+    val student: StudentId,
     val course: CoursePublishedTag,
     val enrolledAt: Instant = Instant.now()
 ) : Event
 
 
 sealed interface EnrollStudentInCourseError : CommandError {
-    data class StudentNotFound(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
-        override fun toString(): String = "Student with id ${student.seq} not found"
+    data class StudentNotFound(val student: StudentId) : EnrollStudentInCourseError {
+        override fun toString(): String = "Student with id ${student.id} not found"
     }
 
     data class CourseNotFound(val course: CoursePublishedTag) : EnrollStudentInCourseError {
-        override fun toString(): String = "Course with id ${course.seq} not found"
+        override fun toString(): String = "Course with id ${course.id} not found"
     }
 
-    data class TuitionNotPaid(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
-        override fun toString(): String = "Student with id ${student.seq} has not paid tuition"
+    data class TuitionNotPaid(val student: StudentId) : EnrollStudentInCourseError {
+        override fun toString(): String = "Student with id ${student.id} has not paid tuition"
     }
 
-    data class AlreadyEnrolled(val student: StudentRegisteredTag) : EnrollStudentInCourseError {
-        override fun toString(): String = "Student with id ${student.seq} has already been enrolled in the course"
+    data class AlreadyEnrolled(val student: StudentId) : EnrollStudentInCourseError {
+        override fun toString(): String = "Student with id ${student.id} has already been enrolled in the course"
     }
 }
 
 fun ensureEnrollStudentExists(es: EventStoreRepo) = commandProcessor<EnrollStudentInCourse> {
     ensureNotNull(
-        es.findEvent<StudentRegistered>(
-            it.student.seq,
+        es.findEventByTag<StudentRegistered>(
             StudentRegisteredEvent.NAME,
+            it.student
         )
     ) { EnrollStudentInCourseError.StudentNotFound(it.student) }
 }
 
 fun ensureCourseExists(es: EventStoreRepo) = commandProcessor<EnrollStudentInCourse> {
     ensureNotNull(
-        es.findEvent<CoursePublished>(
-            it.course.seq,
+        es.findEventByTag<CoursePublished>(
             CoursePublishedEvent.NAME,
+            it.course
         )
     ) { EnrollStudentInCourseError.CourseNotFound(it.course) }
 }
@@ -58,8 +58,8 @@ fun ensureNotAlreadyEnrolled(es: EventStoreRepo) = commandProcessor<EnrollStuden
     ensure(
         es.findEventByMultipleTags<StudentEnrolledInCourse>(
             StudentEnrolledInCourseEvent.NAME,
-            StudentRegisteredTag(it.student.seq),
-            CoursePublishedTag(it.course.seq)
+            it.student,
+            it.course
         ) == null
     ) { EnrollStudentInCourseError.AlreadyEnrolled(it.student) }
 }
@@ -69,7 +69,7 @@ fun ensureTuitionPaid(es: EventStoreRepo) = commandProcessor<EnrollStudentInCour
     ensureNotNull(
         es.findEventByTag(
             TuitionPaidEvent.NAME,
-            StudentRegisteredTag(it.student.seq)
+            it.student
         )
     ) { EnrollStudentInCourseError.TuitionNotPaid(it.student) }
 }
@@ -93,7 +93,7 @@ object StudentEnrolledInCourseEvent : EventMeta<StudentEnrolledInCourse> {
     override val NAME = EventName.of(CLASS)
 
     override fun refs(event: StudentEnrolledInCourse): Array<Ref> = arrayOf(
-        Ref(StudentRegisteredEvent.NAME, event.student.seq),
-        Ref(CoursePublishedEvent.NAME, event.course.seq)
+        Ref(StudentRegisteredEvent.NAME, event.student.id),
+        Ref(CoursePublishedEvent.NAME, event.course.id)
     )
 }
