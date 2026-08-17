@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 import java.util.*
 
 object CourseTable : Table("college.course") {
-    val id = uuid("id").autoGenerate().clientDefault { UUID.randomUUID() }
+    val id = uuid("id")
     val seq = ulong("seq").references(DbEvents.sequence)
     val name = text("name")
     val instructor = text("instructor")

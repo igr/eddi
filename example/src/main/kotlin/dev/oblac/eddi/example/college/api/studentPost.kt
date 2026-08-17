@@ -1,12 +1,11 @@
 package dev.oblac.eddi.example.college.api
 
 import dev.oblac.eddi.example.college.Main
-import dev.oblac.eddi.example.college.StudentRegisteredTag
+import dev.oblac.eddi.example.college.StudentId
 import dev.oblac.eddi.example.college.StudentUpdatedTag
 import dev.oblac.eddi.example.college.UpdateStudent
 import dev.oblac.eddi.example.college.projection.dbFindStudentById
 import dev.oblac.eddi.json.Json
-import dev.oblac.eddi.toSeq
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -15,8 +14,7 @@ import java.util.*
 
 data class StudentUpdateRequest(
     val firstName: String,
-    val lastName: String,
-    val last: String?
+    val lastName: String
 )
 
 
@@ -28,16 +26,13 @@ fun Routing.apiStudent() {
         val body = call.receiveText()
 
         val node = Json.fromJson(body, StudentUpdateRequest::class)
-        val seq = student.seq
         val firstName = node.firstName
         val lastName = node.lastName
-        val last = node.last?.toSeq()
 
         Main.launch(
             UpdateStudent(
-                StudentRegisteredTag(seq),
-                // todo add utility for this if
-                if (last != null) StudentUpdatedTag(last) else null,
+                StudentUpdatedTag(UUID.randomUUID()),
+                StudentId(student.id),
                 firstName,
                 lastName
             )

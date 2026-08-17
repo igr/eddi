@@ -11,7 +11,7 @@ import java.util.*
 data class Student(
     val id: UUID,
     val seq: Seq,
-    val last: Seq?,
+    val last: UUID?,
     val firstName: String,
     val lastName: String,
     val email: String,
@@ -28,7 +28,7 @@ fun dbListStudents(): List<Student> = transaction {
             Student(
                 id = row[StudentTable.id],
                 seq = row[StudentTable.seq].toSeq(),
-                last = row[StudentTable.last]?.toSeq(),
+                last = row[StudentTable.last],
                 firstName = row[StudentTable.firstName],
                 lastName = row[StudentTable.lastName],
                 email = row[StudentTable.email],

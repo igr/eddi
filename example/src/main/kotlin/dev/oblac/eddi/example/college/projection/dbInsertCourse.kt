@@ -9,10 +9,10 @@ import java.util.*
 
 fun dbInsertCourse(envelope: EventEnvelope<CoursePublished>): UUID = transaction {
     val event = envelope.event
-    val seq = envelope.sequence
 
     CourseTable.insert {
-        it[CourseTable.seq] = seq.value
+        it[id] = event.courseId.id
+        it[seq] = envelope.sequence.value
         it[name] = event.courseName
         it[instructor] = event.instructor
         it[createdAt] = event.publishAt

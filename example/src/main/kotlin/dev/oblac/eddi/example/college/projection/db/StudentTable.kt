@@ -6,9 +6,9 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 import java.util.*
 
 object StudentTable : Table("college.student") {
-    val id = uuid("id").autoGenerate().clientDefault { UUID.randomUUID() }
+    val id = uuid("id")
     val seq = ulong("seq").references(DbEvents.sequence)
-    val last = ulong("last").references(DbEvents.sequence).nullable()
+    val last = uuid("last").nullable()
     val firstName = text("first_name")
     val lastName = text("last_name")
     val email = text("email").uniqueIndex()
