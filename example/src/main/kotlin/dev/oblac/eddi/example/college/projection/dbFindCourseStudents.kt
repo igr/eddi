@@ -25,7 +25,6 @@ fun dbFindCourseStudents(courseId: UUID): CourseStudents = transaction {
             Student(
                 id = row[StudentTable.id],
                 seq = row[StudentTable.seq].toSeq(),
-                last = row[StudentTable.last]?.toSeq(),
                 firstName = row[StudentTable.firstName],
                 lastName = row[StudentTable.lastName],
                 email = row[StudentTable.email],

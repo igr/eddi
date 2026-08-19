@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.update
 fun dbUpdateTuitionPayment(envelope: EventEnvelope<TuitionPaid>): Int = transaction {
     val event = envelope.event
 
-    StudentTable.update({ StudentTable.seq eq event.student.seq.value }) {
+    StudentTable.update({ StudentTable.id eq event.student.id }) {
         it[payed] = true
     }
 }

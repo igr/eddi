@@ -9,13 +9,12 @@ import org.jetbrains.exposed.sql.update
 fun dbUpdateStudent(envelope: EventEnvelope<StudentUpdated>): Int = transaction {
     val event = envelope.event
 
-    StudentTable.update({ StudentTable.seq eq event.student.seq.value }) {
+    StudentTable.update({ StudentTable.id eq event.student.id }) {
         event.firstName?.let { firstName ->
             it[StudentTable.firstName] = firstName
         }
         event.lastName?.let { lastName ->
             it[StudentTable.lastName] = lastName
         }
-        it[StudentTable.last] = envelope.sequence.value
     }
 }

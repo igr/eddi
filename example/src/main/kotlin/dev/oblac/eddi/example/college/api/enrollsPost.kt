@@ -1,9 +1,9 @@
 package dev.oblac.eddi.example.college.api
 
-import dev.oblac.eddi.example.college.CoursePublishedTag
+import dev.oblac.eddi.example.college.CourseId
 import dev.oblac.eddi.example.college.EnrollStudentInCourse
 import dev.oblac.eddi.example.college.Main
-import dev.oblac.eddi.example.college.StudentRegisteredTag
+import dev.oblac.eddi.example.college.StudentId
 import dev.oblac.eddi.example.college.projection.dbFindCourseById
 import dev.oblac.eddi.example.college.projection.dbFindStudentById
 import dev.oblac.eddi.json.Json
@@ -30,8 +30,8 @@ fun Routing.apiEnrolls() {
 
         Main.launch(
             EnrollStudentInCourse(
-                StudentRegisteredTag(student.seq),
-                CoursePublishedTag(course.seq),
+                StudentId(student.id),
+                CourseId(course.id),
             )
         ).fold(
             ifLeft = {

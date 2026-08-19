@@ -6,12 +6,11 @@ import dev.oblac.eddi.db.DbEventStore
 import dev.oblac.eddi.db.MigrationConfig
 import dev.oblac.eddi.db.tx
 import dev.oblac.eddi.example.college.Main.es
-import dev.oblac.eddi.meta.EventsRegistry
 import dev.oblac.eddi.plus
 
 fun main() {
     // register events before using the event store
-    EventsRegistry.init()
+    registerCollegeEvents()
 
     // Database connection with separate schemas for each module
     val db = Db(

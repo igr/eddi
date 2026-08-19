@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS eddi.events
     cid  BIGINT      NOT NULL,
     name TEXT        NOT NULL,
     data JSONB       NOT NULL,
-    tags JSONB       NOT NULL DEFAULT '[]'::JSONB,
+    ids  JSONB       NOT NULL DEFAULT '[]'::JSONB,
     ts   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS eddi.events
 CREATE INDEX IF NOT EXISTS idx_events_name ON eddi.events (name);
 
 ---
---- Add GIN index on events.tags for efficient tag queries.
+--- Add GIN index on events.ids for efficient id queries.
 ---
-CREATE INDEX IF NOT EXISTS idx_events_tags ON eddi.events USING gin(tags);
+CREATE INDEX IF NOT EXISTS idx_events_ids ON eddi.events USING gin(ids);
 
 ---
 --- Offset table for reliable event publishing.

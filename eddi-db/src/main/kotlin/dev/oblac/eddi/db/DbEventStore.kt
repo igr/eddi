@@ -4,10 +4,8 @@ import dev.oblac.eddi.*
 
 class DbEventStore : EventStore {
 
-    override fun <E : Event> storeEvent(event: E, correlationId: ULong): EventEnvelope<E> {
-        val meta = Events.metaOf(event)
-        return dbStoreEvent(correlationId, event, meta.NAME, meta.refs(event))
-    }
+    override fun <E : Event> storeEvent(event: E, correlationId: ULong): EventEnvelope<E> =
+        dbStoreEvent(correlationId, event, Events.nameOf(event), event.ids())
 
     private val eventProcessor = DbEventProcessor(processorId = 1L)
 
@@ -15,28 +13,16 @@ class DbEventStore : EventStore {
         eventProcessor.startInbox(eventListener)
     }
 
-    override fun <T: Event> findLastEventByTagBefore(lastEvent: Seq, tagToFind: Tag<T>): EventEnvelope<T>? {
-        val targetRef = Events.refOf(tagToFind)
-        return dbFindLastEventByTag(lastEvent, targetRef) as EventEnvelope<T>?
-    }
+    override fun <T : Event> findEventById(eventName: EventName, id: Id): EventEnvelope<T>? =
+        dbFindEventById(eventName, id) as EventEnvelope<T>?
 
-    override fun <T : Event> findEventByTag(eventName: EventName, tagToFind: Tag<T>): EventEnvelope<T>? {
-        val targetRef = Events.refOf(tagToFind)
-        return dbFindEventByTag(eventName, targetRef) as EventEnvelope<T>?
-    }
-
-    override fun <T : Event> findEventByMultipleTags(eventName: EventName, vararg tagsToFind: Tag<Event>): EventEnvelope<T>? {
-        val refs = tagsToFind.map { Events.refOf(it) }.toTypedArray()
-        return dbFindEventByMultipleTags(eventName, *refs) as EventEnvelope<T>?
-    }
+    override fun <T : Event> findEventByMultipleIds(eventName: EventName, vararg ids: Id): EventEnvelope<T>? =
+        dbFindEventByMultipleIds(eventName, *ids) as EventEnvelope<T>?
 
     override fun <T: Event> findEvents(name: EventName, dataFilters: Map<String, String>): List<EventEnvelope<T>> {
         return dbFindEventsByName(name.value, dataFilters) as List<EventEnvelope<T>>
     }
 
-    override fun <T: Event> findEvent(seq: Seq, name: EventName): EventEnvelope<T>? {
-        return dbFindEventBySeqAndName(seq, name.value) as EventEnvelope<T>?
-    }
 
 
 }

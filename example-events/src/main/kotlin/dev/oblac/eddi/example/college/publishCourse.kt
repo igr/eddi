@@ -3,6 +3,7 @@ package dev.oblac.eddi.example.college
 import arrow.core.raise.ensure
 import dev.oblac.eddi.*
 import java.time.Instant
+import java.util.UUID
 
 data class PublishCourse(
     val courseName: String,
@@ -10,13 +11,16 @@ data class PublishCourse(
 ) : Command
 
 @JvmInline
-value class CoursePublishedTag(override val seq: Seq) : Tag<CoursePublished>
+value class CourseId(override val id: UUID) : Id
 
 data class CoursePublished(
+    val courseId: CourseId,
     val courseName: String,
     val instructor: String,
     val publishAt: Instant = Instant.now()
-) : Event
+) : Event {
+    override fun ids() = listOf(courseId)
+}
 
 sealed interface PublishCourseError : CommandError {
     object CourseAlreadyExists : PublishCourseError
@@ -24,15 +28,12 @@ sealed interface PublishCourseError : CommandError {
 
 fun ensureUniqueCourse(es: EventStoreRepo) = commandProcessor<PublishCourse> {
     ensure(
-        es.findEvents<CoursePublished>(
-            CoursePublishedEvent.NAME,
-            mapOf("courseName" to it.courseName)
-        ).isEmpty()
+        es.findEvents<CoursePublished>(mapOf("courseName" to it.courseName)).isEmpty()
     ) { PublishCourseError.CourseAlreadyExists }
 }
 
 operator fun PublishCourse.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureUniqueCourse(es)
-        emit { CoursePublished(courseName, instructor) }
+        emit { CoursePublished(CourseId(UUID.randomUUID()), courseName, instructor) }
     }

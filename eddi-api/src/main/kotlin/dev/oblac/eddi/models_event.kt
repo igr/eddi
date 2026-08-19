@@ -29,9 +29,12 @@ value class EventName(val value: String) {
 }
 
 /**
- * Marker interface for Events.
+ * An event. Each event declares the [Id]s it carries: they are stored next to the event
+ * and are what the id-based lookups on [EventStoreRepo] match against.
  */
-interface Event
+interface Event {
+    fun ids(): List<Id>
+}
 
 /**
  * Stored event.

@@ -4,9 +4,8 @@
 ---
 CREATE TABLE IF NOT EXISTS college.student
 (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id            UUID PRIMARY KEY,
     seq           BIGINT      NOT NULL REFERENCES eddi.events (seq),
-    last          BIGINT      NULL REFERENCES eddi.events (seq),
     first_name    TEXT        NOT NULL,
     last_name     TEXT        NOT NULL,
     email         TEXT        NOT NULL UNIQUE,
@@ -29,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_student_email ON college.student (email);
 ---
 CREATE TABLE IF NOT EXISTS college.course
 (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id          UUID PRIMARY KEY,
     seq         BIGINT      NOT NULL REFERENCES eddi.events (seq),
     name        TEXT        NOT NULL,
     instructor  TEXT        NOT NULL,

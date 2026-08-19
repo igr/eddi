@@ -3,6 +3,7 @@ package dev.oblac.eddi.example.college
 import arrow.core.raise.ensure
 import dev.oblac.eddi.*
 import java.time.Instant
+import java.util.UUID
 
 data class RegisterStudent(
     val firstName: String,
@@ -11,14 +12,17 @@ data class RegisterStudent(
 ) : Command
 
 @JvmInline
-value class StudentRegisteredTag(override val seq: Seq) : Tag<StudentRegistered>
+value class StudentId(override val id: UUID) : Id
 
 data class StudentRegistered(
+    val studentId: StudentId,
     val firstName: String,
     val lastName: String,
     val email: String,
     val registeredAt: Instant = Instant.now()
-) : Event
+) : Event {
+    override fun ids() = listOf(studentId)
+}
 
 sealed interface RegisterStudentError : CommandError {
     data object StudentAlreadyExist : RegisterStudentError {
@@ -28,10 +32,7 @@ sealed interface RegisterStudentError : CommandError {
 
 fun ensureUniqueEmail(es: EventStoreRepo) = commandProcessor<RegisterStudent> {
     ensure(
-        es.findEvents<StudentRegistered>(
-            StudentRegisteredEvent.NAME,
-            mapOf("email" to it.email)
-        ).isEmpty()
+        es.findEvents<StudentRegistered>(mapOf("email" to it.email)).isEmpty()
     ) { RegisterStudentError.StudentAlreadyExist }
 }
 
@@ -39,5 +40,5 @@ fun ensureUniqueEmail(es: EventStoreRepo) = commandProcessor<RegisterStudent> {
 operator fun RegisterStudent.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureUniqueEmail(es)
-        emit { StudentRegistered(firstName, lastName, email) }
+        emit { StudentRegistered(StudentId(UUID.randomUUID()), firstName, lastName, email) }
     }
