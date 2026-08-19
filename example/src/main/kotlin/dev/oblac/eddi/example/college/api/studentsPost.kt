@@ -2,7 +2,6 @@ package dev.oblac.eddi.example.college.api
 
 import dev.oblac.eddi.example.college.Main
 import dev.oblac.eddi.example.college.RegisterStudent
-import dev.oblac.eddi.example.college.StudentId
 import dev.oblac.eddi.json.Json
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -28,11 +27,9 @@ fun Routing.apiStudents() {
 
         val firstName = node.firstName
         val lastName = node.lastName
-        val studentId = StudentId(UUID.randomUUID())
 
         Main.launch(
             RegisterStudent(
-                studentId,
                 firstName, lastName, "${firstName.lowercase()}.${lastName.lowercase()}@college.edu"
             )
         ).fold(
@@ -44,11 +41,7 @@ fun Routing.apiStudents() {
                 )
             },
             ifRight = {
-                call.respondText(
-                    Json.toJson(StudentResponse(studentId.id)),
-                    ContentType.Application.Json,
-                    HttpStatusCode.Accepted
-                )
+                call.respondText(Json.toJson(StudentResponse(it)), ContentType.Application.Json, HttpStatusCode.Accepted)
             }
         )
     }

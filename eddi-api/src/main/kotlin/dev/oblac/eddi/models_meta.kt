@@ -2,42 +2,23 @@ package dev.oblac.eddi
 
 import kotlin.reflect.KClass
 
-object Events {
-    private val klassToMeta = mutableMapOf<KClass<out Event>, EventMeta<out Event>>()
-    private val nameToMeta = mutableMapOf<EventName, EventMeta<out Event>>()
-    private val klassToName = mutableMapOf<KClass<out Tag<Event>>, EventName>()
-
-    fun register(events: List<EventMeta<out Event>>) {
-        events.forEach {
-            klassToMeta[it.CLASS] = it
-            nameToMeta[it.NAME] = it
-        }
-    }
-
-    fun register(klass: KClass<out Tag<Event>>, eventName: EventName) {
-        klassToName[klass] = eventName
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <E : Event> metaOf(event: E): EventMeta<E> =
-        klassToMeta[event::class] as? EventMeta<E> ?: error("Event ${event::class.simpleName} is not registered")
-
-    fun metaOf(name: EventName): EventMeta<out Event> =
-        nameToMeta[name] ?: error("Event with name '${name.value}' is not registered")
-
-    fun refOf(tag: Tag<Event>): Ref {
-        val name = klassToName[tag::class] ?: error("Tag ${tag::class.simpleName} is not registered")
-        return Ref(name, tag.id)
-    }
-}
-
 /**
- * Metadata about an [Event] type.
- * Each [Event] has its own [EventMeta] implementation, declared next to the event itself.
+ * Registry of event classes. Events are stored under their [EventName] and read back by it,
+ * so every event class must be registered before it is stored.
  */
-@Suppress("PropertyName")
-interface EventMeta<E: Event> {
-    val CLASS: KClass<out Event>
-    val NAME: EventName
-    fun refs(event: E): Array<Ref>
+object Events {
+    private val nameToClass = mutableMapOf<EventName, KClass<out Event>>()
+
+    fun register(vararg events: KClass<out Event>) {
+        events.forEach { nameToClass[EventName.of(it)] = it }
+    }
+
+    fun nameOf(event: Event): EventName {
+        val name = EventName.of(event::class)
+        if (name !in nameToClass) error("Event ${event::class.simpleName} is not registered")
+        return name
+    }
+
+    fun classOf(name: EventName): KClass<out Event> =
+        nameToClass[name] ?: error("Event with name '${name.value}' is not registered")
 }

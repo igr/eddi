@@ -1,9 +1,8 @@
 package dev.oblac.eddi.example.college
 
-import dev.oblac.eddi.Ref
 import dev.oblac.eddi.example.college.StubEventStoreRepo.Companion.envelope
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -11,74 +10,57 @@ import java.util.UUID
 class CommandProcessorTest {
 
     private val studentId = StudentId(UUID.randomUUID())
-    private val courseId = CoursePublishedTag(UUID.randomUUID())
+    private val courseId = CourseId(UUID.randomUUID())
 
     private fun registered() =
-        envelope(
-            StudentRegistered(studentId, "Ada", "Lovelace", "ada@college.edu"),
-            StudentRegisteredEvent.NAME
-        )
+        envelope(StudentRegistered(studentId, "Ada", "Lovelace", "ada@college.edu"))
 
     @Test
-    fun `RegisterStudent emits an event carrying the supplied id`() {
-        val cmd = RegisterStudent(studentId, "Ada", "Lovelace", "ada@college.edu")
+    fun `RegisterStudent mints a distinct student id per registration`() {
+        val cmd = RegisterStudent("Ada", "Lovelace", "ada@college.edu")
 
-        val event = cmd(StubEventStoreRepo()).getOrNull()!!
+        val first = cmd(StubEventStoreRepo()).getOrNull()!!
+        val second = cmd(StubEventStoreRepo()).getOrNull()!!
 
-        assertEquals(studentId, event.studentId)
+        assertNotEquals(first.studentId, second.studentId)
     }
 
     @Test
-    fun `StudentRegistered self-tags with its own id`() {
+    fun `PublishCourse mints a distinct course id per publication`() {
+        val cmd = PublishCourse("Algebra", "Noether")
+
+        val first = cmd(StubEventStoreRepo()).getOrNull()!!
+        val second = cmd(StubEventStoreRepo()).getOrNull()!!
+
+        assertNotEquals(first.courseId, second.courseId)
+    }
+
+    @Test
+    fun `StudentRegistered carries its own id`() {
         val event = StudentRegistered(studentId, "Ada", "Lovelace", "ada@college.edu")
 
-        val refs = StudentRegisteredEvent.refs(event).toList()
-
-        assertEquals(listOf(Ref(StudentRegisteredEvent.NAME, studentId.id)), refs)
+        assertEquals(listOf(studentId), event.ids())
     }
 
     @Test
-    fun `UpdateStudent derives a null last when there is no previous update`() {
-        val updateId = StudentUpdatedTag(UUID.randomUUID())
+    fun `UpdateStudent emits an event carrying the student id`() {
         val repo = StubEventStoreRepo(listOf(registered()))
 
-        val event = UpdateStudent(updateId, studentId, "Ada", null)(repo).getOrNull()!!
+        val event = UpdateStudent(studentId, "Ada", null)(repo).getOrNull()!!
 
-        assertEquals(updateId, event.updateId)
-        assertNull(event.last)
+        assertEquals(studentId, event.student)
     }
 
     @Test
-    fun `UpdateStudent chains last to the previous update's id`() {
-        val previousId = StudentUpdatedTag(UUID.randomUUID())
-        val updateId = StudentUpdatedTag(UUID.randomUUID())
-        val repo = StubEventStoreRepo(
-            listOf(
-                registered(),
-                envelope(
-                    StudentUpdated(previousId, studentId, null, "Ada", null),
-                    StudentUpdatedEvent.NAME,
-                    seq = 2L
-                )
-            )
-        )
+    fun `StudentUpdated carries the id of the student it updates`() {
+        val event = StudentUpdated(studentId, "Grace", null)
 
-        val event = UpdateStudent(updateId, studentId, "Grace", null)(repo).getOrNull()!!
-
-        assertEquals(previousId, event.last)
-        assertEquals(
-            listOf(
-                Ref(StudentUpdatedEvent.NAME, updateId.id),
-                Ref(StudentRegisteredEvent.NAME, studentId.id),
-                Ref(StudentUpdatedEvent.NAME, previousId.id)
-            ),
-            StudentUpdatedEvent.refs(event).toList()
-        )
+        assertEquals(listOf(studentId), event.ids())
     }
 
     @Test
     fun `UpdateStudent fails when the student does not exist`() {
-        val cmd = UpdateStudent(StudentUpdatedTag(UUID.randomUUID()), studentId, "Ada", null)
+        val cmd = UpdateStudent(studentId, "Ada", null)
 
         val result = cmd(StubEventStoreRepo())
 
@@ -91,15 +73,9 @@ class CommandProcessorTest {
     }
 
     @Test
-    fun `StudentEnrolledInCourse refs both the student and the course`() {
+    fun `StudentEnrolledInCourse carries both the student and the course ids`() {
         val event = StudentEnrolledInCourse(studentId, courseId)
 
-        assertEquals(
-            listOf(
-                Ref(StudentRegisteredEvent.NAME, studentId.id),
-                Ref(CoursePublishedEvent.NAME, courseId.id)
-            ),
-            StudentEnrolledInCourseEvent.refs(event).toList()
-        )
+        assertEquals(listOf(studentId, courseId), event.ids())
     }
 }

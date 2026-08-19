@@ -6,14 +6,13 @@ import java.time.Instant
 import java.util.UUID
 
 data class RegisterStudent(
-    val studentId: StudentId,
     val firstName: String,
     val lastName: String,
     val email: String
 ) : Command
 
 @JvmInline
-value class StudentId(override val id: UUID) : Tag<StudentRegistered>
+value class StudentId(override val id: UUID) : Id
 
 data class StudentRegistered(
     val studentId: StudentId,
@@ -21,7 +20,9 @@ data class StudentRegistered(
     val lastName: String,
     val email: String,
     val registeredAt: Instant = Instant.now()
-) : Event
+) : Event {
+    override fun ids() = listOf(studentId)
+}
 
 sealed interface RegisterStudentError : CommandError {
     data object StudentAlreadyExist : RegisterStudentError {
@@ -31,10 +32,7 @@ sealed interface RegisterStudentError : CommandError {
 
 fun ensureUniqueEmail(es: EventStoreRepo) = commandProcessor<RegisterStudent> {
     ensure(
-        es.findEvents<StudentRegistered>(
-            StudentRegisteredEvent.NAME,
-            mapOf("email" to it.email)
-        ).isEmpty()
+        es.findEvents<StudentRegistered>(mapOf("email" to it.email)).isEmpty()
     ) { RegisterStudentError.StudentAlreadyExist }
 }
 
@@ -42,20 +40,5 @@ fun ensureUniqueEmail(es: EventStoreRepo) = commandProcessor<RegisterStudent> {
 operator fun RegisterStudent.invoke(es: EventStoreRepo) =
     process(this) {
         +ensureUniqueEmail(es)
-        emit { StudentRegistered(studentId, firstName, lastName, email) }
+        emit { StudentRegistered(StudentId(UUID.randomUUID()), firstName, lastName, email) }
     }
-
-/**
- * Meta companion class for [StudentRegistered].
- */
-object StudentRegisteredEvent : EventMeta<StudentRegistered> {
-
-    override val CLASS = StudentRegistered::class
-    override val NAME = EventName.of(CLASS)
-
-    override fun refs(event: StudentRegistered): Array<Ref> = arrayOf(
-        Ref(NAME, event.studentId.id)
-    )
-}
-
-fun EventEnvelope<StudentRegistered>.tag() = event.studentId

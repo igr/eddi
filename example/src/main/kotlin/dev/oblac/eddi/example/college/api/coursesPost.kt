@@ -1,6 +1,5 @@
 package dev.oblac.eddi.example.college.api
 
-import dev.oblac.eddi.example.college.CoursePublishedTag
 import dev.oblac.eddi.example.college.Main
 import dev.oblac.eddi.example.college.PublishCourse
 import dev.oblac.eddi.json.Json
@@ -28,11 +27,9 @@ fun Routing.apiCourses() {
 
         val name = node.name
         val instructor = node.instructor
-        val courseId = CoursePublishedTag(UUID.randomUUID())
 
         Main.launch(
             PublishCourse(
-                courseId = courseId,
                 courseName = name,
                 instructor = instructor
             )
@@ -45,11 +42,7 @@ fun Routing.apiCourses() {
                 )
             },
             ifRight = {
-                call.respondText(
-                    Json.toJson(NewCourseResponse(courseId.id)),
-                    ContentType.Application.Json,
-                    HttpStatusCode.Accepted
-                )
+                call.respondText(Json.toJson(NewCourseResponse(it)), ContentType.Application.Json, HttpStatusCode.Accepted)
             }
         )
     }

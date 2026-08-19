@@ -5,7 +5,7 @@ import dev.oblac.eddi.EventEnvelope
 import dev.oblac.eddi.EventName
 import dev.oblac.eddi.EventStoreRepo
 import dev.oblac.eddi.Seq
-import dev.oblac.eddi.Tag
+import dev.oblac.eddi.Id
 import java.time.Instant
 
 /**
@@ -17,14 +17,12 @@ class StubEventStoreRepo(
     private val events: List<EventEnvelope<out Event>> = emptyList()
 ) : EventStoreRepo {
 
-    override fun <T : Event> findLastEventByTagBefore(lastEvent: Seq, tagToFind: Tag<T>): EventEnvelope<T>? = null
-
-    override fun <T : Event> findEventByTag(eventName: EventName, tagToFind: Tag<T>): EventEnvelope<T>? =
+    override fun <T : Event> findEventById(eventName: EventName, id: Id): EventEnvelope<T>? =
         events.lastOrNull { it.eventName == eventName } as EventEnvelope<T>?
 
-    override fun <T : Event> findEventByMultipleTags(
+    override fun <T : Event> findEventByMultipleIds(
         eventName: EventName,
-        vararg tagsToFind: Tag<Event>
+        vararg ids: Id
     ): EventEnvelope<T>? =
         events.lastOrNull { it.eventName == eventName } as EventEnvelope<T>?
 
@@ -32,7 +30,7 @@ class StubEventStoreRepo(
         events.filter { it.eventName == name } as List<EventEnvelope<T>>
 
     companion object {
-        fun <E : Event> envelope(event: E, name: EventName, seq: Long = 1L): EventEnvelope<E> =
-            EventEnvelope(Seq.of(seq), 0u, event, name, Instant.EPOCH)
+        fun <E : Event> envelope(event: E, seq: Long = 1L): EventEnvelope<E> =
+            EventEnvelope(Seq.of(seq), 0u, event, EventName.of(event::class), Instant.EPOCH)
     }
 }

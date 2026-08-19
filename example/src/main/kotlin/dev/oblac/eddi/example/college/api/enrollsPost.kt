@@ -1,6 +1,6 @@
 package dev.oblac.eddi.example.college.api
 
-import dev.oblac.eddi.example.college.CoursePublishedTag
+import dev.oblac.eddi.example.college.CourseId
 import dev.oblac.eddi.example.college.EnrollStudentInCourse
 import dev.oblac.eddi.example.college.Main
 import dev.oblac.eddi.example.college.StudentId
@@ -31,7 +31,7 @@ fun Routing.apiEnrolls() {
         Main.launch(
             EnrollStudentInCourse(
                 StudentId(student.id),
-                CoursePublishedTag(course.id),
+                CourseId(course.id),
             )
         ).fold(
             ifLeft = {

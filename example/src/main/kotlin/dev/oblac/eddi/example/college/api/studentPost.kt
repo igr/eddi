@@ -2,7 +2,6 @@ package dev.oblac.eddi.example.college.api
 
 import dev.oblac.eddi.example.college.Main
 import dev.oblac.eddi.example.college.StudentId
-import dev.oblac.eddi.example.college.StudentUpdatedTag
 import dev.oblac.eddi.example.college.UpdateStudent
 import dev.oblac.eddi.example.college.projection.dbFindStudentById
 import dev.oblac.eddi.json.Json
@@ -31,7 +30,6 @@ fun Routing.apiStudent() {
 
         Main.launch(
             UpdateStudent(
-                StudentUpdatedTag(UUID.randomUUID()),
                 StudentId(student.id),
                 firstName,
                 lastName

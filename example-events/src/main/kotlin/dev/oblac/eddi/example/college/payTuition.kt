@@ -12,7 +12,9 @@ data class PayTuition(
 data class TuitionPaid(
     val student: StudentId,
     val paidAt: Instant = Instant.now(),
-) : Event
+) : Event {
+    override fun ids() = listOf(student)
+}
 
 sealed interface PayTuitionError : CommandError {
     object StudentNotFound : PayTuitionError
@@ -21,19 +23,13 @@ sealed interface PayTuitionError : CommandError {
 
 fun ensurePayTuitionStudentExists(es: EventStoreRepo) = commandProcessor<PayTuition> {
     ensureNotNull(
-        es.findEventByTag<StudentRegistered>(
-            StudentRegisteredEvent.NAME,
-            it.student
-        )
+        es.findEventById<StudentRegistered>(it.student)
     ) { PayTuitionError.StudentNotFound }
 }
 
 fun ensureTuitionNotAlreadyPaid(es: EventStoreRepo) = commandProcessor<PayTuition> {
     ensure(
-        es.findEventByTag(
-            TuitionPaidEvent.NAME,
-            it.student
-        ) == null
+        es.findEventById<TuitionPaid>(it.student) == null
     ) { PayTuitionError.TuitionAlreadyPaid }
 }
 
@@ -43,16 +39,3 @@ operator fun PayTuition.invoke(es: EventStoreRepo) =
         +ensureTuitionNotAlreadyPaid(es)
         emit { TuitionPaid(student) }
     }
-
-/**
- * Meta companion class for [TuitionPaid].
- */
-object TuitionPaidEvent : EventMeta<TuitionPaid> {
-
-    override val CLASS = TuitionPaid::class
-    override val NAME = EventName.of(CLASS)
-
-    override fun refs(event: TuitionPaid): Array<Ref> = arrayOf(
-        Ref(StudentRegisteredEvent.NAME, event.student.id)
-    )
-}

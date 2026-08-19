@@ -9,26 +9,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import dev.oblac.eddi.*
 import kotlin.reflect.KClass
-import java.util.UUID
-
-private class RefSerializer : JsonSerializer<Ref>() {
-    override fun serialize(value: Ref, gen: JsonGenerator, serializers: SerializerProvider) {
-        gen.writeStartObject()
-        gen.writeStringField(value.name.value, value.id.toString())
-        gen.writeEndObject()
-    }
-}
-
-private class RefDeserializer : JsonDeserializer<Ref>() {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Ref {
-        val node = p.codec.readTree<JsonNode>(p)
-        val field = node.fields().next()
-        return Ref(
-            name = EventName(field.key),
-            id = UUID.fromString(field.value.asText())
-        )
-    }
-}
 
 private class SeqSerializer : JsonSerializer<Seq>() {
     override fun serialize(value: Seq, gen: JsonGenerator, serializers: SerializerProvider) {
@@ -44,8 +24,6 @@ private class SeqDeserializer : JsonDeserializer<Seq>() {
 
 object Json {
     private val eddiModule = SimpleModule("eddi").apply {
-        addSerializer(Ref::class.java, RefSerializer())
-        addDeserializer(Ref::class.java, RefDeserializer())
         addSerializer(Seq::class.java, SeqSerializer())
         addDeserializer(Seq::class.java, SeqDeserializer())
     }
@@ -76,5 +54,16 @@ object Json {
 
     fun valueToNode(value: Any): JsonNode =
         objectMapper.valueToTree(value)
+
+    /**
+     * Ids as stored with an event: `[{"<id class name>": "<uuid>"}, …]`, keyed by each id's
+     * runtime type. Id-based lookups match against this same shape. Deliberately not a Jackson
+     * serializer for [Id]: value-class id properties inside an event payload must stay plain uuid strings.
+     */
+    fun idsToNode(ids: List<Id>): JsonNode =
+        valueToNode(ids.map { mapOf(nameOf(it) to it.id) })
+
+    private fun nameOf(id: Id): String =
+        id::class.simpleName ?: error("Id class must have a simple name")
 
 }

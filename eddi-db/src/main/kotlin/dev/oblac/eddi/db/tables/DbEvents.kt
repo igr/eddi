@@ -16,9 +16,9 @@ object DbEvents : Table("eddi.events") {
         { Json.toJson(it) },
         { Json.jsonToNode(it) }
     )
-    val tags = jsonb("tags",
+    val ids = jsonb("ids",
         { Json.toJson(it) },
-        { Json.fromJson<Array<Ref>>(it) }
+        { Json.jsonToNode(it) }
     )
     val createdAt = timestamp("ts")
 
@@ -28,7 +28,7 @@ object DbEvents : Table("eddi.events") {
 fun ResultRow.toEventEnvelope(): EventEnvelope<Event> {
     val eventName = EventName(this[DbEvents.name])
     val node: JsonNode = this[DbEvents.data]
-    val klass = Events.metaOf(eventName).CLASS
+    val klass = Events.classOf(eventName)
     val event = Json.fromNode(node, klass.java)
 
     return EventEnvelope(

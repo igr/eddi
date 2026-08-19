@@ -7,13 +7,13 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Instant
 
-fun <E : Event> dbStoreEvent(correlationId: ULong, event: E, eventName: EventName, refs: Array<Ref>): EventEnvelope<E> {
+fun <E : Event> dbStoreEvent(correlationId: ULong, event: E, eventName: EventName, ids: List<Id>): EventEnvelope<E> {
     val sequence = transaction {
         DbEvents.insert {
             it[DbEvents.correlationId] = correlationId
             it[DbEvents.name] = eventName.value
             it[DbEvents.data] = Json.valueToNode(event)
-            it[DbEvents.tags] = refs
+            it[DbEvents.ids] = Json.idsToNode(ids)
             it[DbEvents.createdAt] = Instant.now()
         } get DbEvents.sequence
     }
