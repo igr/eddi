@@ -17,4 +17,8 @@ dependencies {
 
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.16")
+
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.testcontainers.postgresql)
 }

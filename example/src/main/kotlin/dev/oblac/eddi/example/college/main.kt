@@ -1,12 +1,11 @@
 package dev.oblac.eddi.example.college
 
-import dev.oblac.eddi.async
 import dev.oblac.eddi.db.Db
 import dev.oblac.eddi.db.DbEventStore
 import dev.oblac.eddi.db.MigrationConfig
-import dev.oblac.eddi.db.tx
 import dev.oblac.eddi.example.college.Main.es
 import dev.oblac.eddi.plus
+import dev.oblac.eddi.retryOnConflict
 
 fun main() {
     // register events before using the event store
@@ -34,7 +33,7 @@ fun main() {
 object Main {
     val es = DbEventStore()
 
-    val launch = commandHandler(es).tx().async()
+    val execute = commandHandler(es).retryOnConflict()
 
 }
 

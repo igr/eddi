@@ -1,48 +1,25 @@
 package dev.oblac.eddi.example.college.api
 
-import dev.oblac.eddi.example.college.Main
 import dev.oblac.eddi.example.college.RegisterStudent
-import dev.oblac.eddi.json.Json
-import io.ktor.http.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
+import dev.oblac.eddi.example.college.StudentRegistered
 import io.ktor.server.routing.*
-import java.util.*
 
 data class StudentRequest(
     val firstName: String,
     val lastName: String
 )
 
-// todo names are wrong
-data class StudentResponse(
-    val uuid: UUID,
-)
-
 fun Routing.apiStudents() {
     post("/api/students") {
-        val body = call.receiveText()
+        val request = call.receiveJsonOr400<StudentRequest>() ?: return@post
+        val firstName = request.firstName
+        val lastName = request.lastName
 
-        val node = Json.fromJson(body, StudentRequest::class)
-
-        val firstName = node.firstName
-        val lastName = node.lastName
-
-        Main.launch(
+        val result = execute(
             RegisterStudent(
                 firstName, lastName, "${firstName.lowercase()}.${lastName.lowercase()}@college.edu"
             )
-        ).fold(
-            ifLeft = {
-                call.respondText(
-                    "Error: error",
-                    ContentType.Text.Plain,
-                    HttpStatusCode.BadRequest
-                )
-            },
-            ifRight = {
-                call.respondText(Json.toJson(StudentResponse(it)), ContentType.Application.Json, HttpStatusCode.Accepted)
-            }
         )
+        call.respondCommand<StudentRegistered>(result, created = true) { it.studentId.id }
     }
 }

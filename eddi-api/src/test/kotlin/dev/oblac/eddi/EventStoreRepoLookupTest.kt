@@ -24,11 +24,6 @@ private class RecordingRepo : EventStoreRepo {
         askedFor = eventName
         return null
     }
-
-    override fun <T : Event> findEvents(name: EventName, dataFilters: Map<String, String>): List<EventEnvelope<T>> {
-        askedFor = name
-        return emptyList()
-    }
 }
 
 class EventStoreRepoLookupTest {
@@ -46,13 +41,6 @@ class EventStoreRepoLookupTest {
     @Test
     fun `findEventByMultipleIds asks for the reified event's name`() {
         repo.findEventByMultipleIds<Looked>(id, id)
-
-        assertEquals(EventName("Looked"), repo.askedFor)
-    }
-
-    @Test
-    fun `findEvents asks for the reified event's name`() {
-        repo.findEvents<Looked>(mapOf("label" to "x"))
 
         assertEquals(EventName("Looked"), repo.askedFor)
     }

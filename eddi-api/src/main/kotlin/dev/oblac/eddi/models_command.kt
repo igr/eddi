@@ -13,3 +13,8 @@ interface CommandError
 data class UnknownCommandError(val command: Command) : CommandError {
     override fun toString(): String = "UnknownCommandError(command=$command)"
 }
+/**
+ * The append was refused: the version of the [stale] ids changed between the command's read and
+ * its append. The command should be re-run against the current state.
+ */
+data class ConcurrencyConflict(val stale: Set<Id>) : CommandError

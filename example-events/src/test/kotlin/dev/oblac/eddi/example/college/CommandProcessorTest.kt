@@ -15,6 +15,30 @@ class CommandProcessorTest {
     private fun registered() =
         envelope(StudentRegistered(studentId, "Ada", "Lovelace", "ada@college.edu"))
 
+    private fun published() =
+        envelope(CoursePublished(courseId, "Algebra", "Noether"))
+
+    @Test
+    fun `CoursePublished carries its own id and the course name id`() {
+        val event = CoursePublished(courseId, "Algebra", "Noether")
+
+        assertEquals(listOf(courseId, CourseNameId.of("Algebra")), event.ids())
+    }
+
+    @Test
+    fun `PublishCourse fails when a course with the same name exists`() {
+        val repo = StubEventStoreRepo(listOf(published()))
+
+        assertTrue(PublishCourse("Algebra", "Noether")(repo).isLeft())
+    }
+
+    @Test
+    fun `PublishCourse succeeds when only a different course name exists`() {
+        val repo = StubEventStoreRepo(listOf(published()))
+
+        assertTrue(PublishCourse("Topology", "Noether")(repo).isRight())
+    }
+
     @Test
     fun `RegisterStudent mints a distinct student id per registration`() {
         val cmd = RegisterStudent("Ada", "Lovelace", "ada@college.edu")
@@ -36,10 +60,30 @@ class CommandProcessorTest {
     }
 
     @Test
-    fun `StudentRegistered carries its own id`() {
+    fun `StudentRegistered carries its own id and the email id`() {
         val event = StudentRegistered(studentId, "Ada", "Lovelace", "ada@college.edu")
 
-        assertEquals(listOf(studentId), event.ids())
+        assertEquals(listOf(studentId, EmailId.of("ada@college.edu")), event.ids())
+    }
+
+    @Test
+    fun `EmailId is the same for the same email and different otherwise`() {
+        assertEquals(EmailId.of("ada@college.edu"), EmailId.of("ada@college.edu"))
+        assertNotEquals(EmailId.of("ada@college.edu"), EmailId.of("grace@college.edu"))
+    }
+
+    @Test
+    fun `RegisterStudent fails when a student with the same email exists`() {
+        val repo = StubEventStoreRepo(listOf(registered()))
+
+        assertTrue(RegisterStudent("Ada", "Lovelace", "ada@college.edu")(repo).isLeft())
+    }
+
+    @Test
+    fun `RegisterStudent succeeds when only a different email exists`() {
+        val repo = StubEventStoreRepo(listOf(registered()))
+
+        assertTrue(RegisterStudent("Grace", "Hopper", "grace@college.edu")(repo).isRight())
     }
 
     @Test

@@ -25,4 +25,8 @@ dependencies {
 
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.flyway)
+    implementation(libs.kotlinx.coroutines)
+
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

@@ -17,8 +17,13 @@ data class TuitionPaid(
 }
 
 sealed interface PayTuitionError : CommandError {
-    object StudentNotFound : PayTuitionError
-    object TuitionAlreadyPaid : PayTuitionError
+    object StudentNotFound : PayTuitionError {
+        override fun toString(): String = "Student not found"
+    }
+
+    object TuitionAlreadyPaid : PayTuitionError {
+        override fun toString(): String = "Tuition has already been paid"
+    }
 }
 
 fun ensurePayTuitionStudentExists(es: EventStoreRepo) = commandProcessor<PayTuition> {
