@@ -47,3 +47,9 @@ data class EventEnvelope<E : Event>(
     val timestamp: Instant = Instant.now(),
 )
 
+
+/**
+ * Versions of ids as read by a command: for each id, the sequence of the latest event carrying it
+ * ([Seq.ZERO] if none) at the time the command read it.
+ */
+typealias Versions = Map<Id, Seq>

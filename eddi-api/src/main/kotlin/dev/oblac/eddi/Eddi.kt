@@ -1,9 +1,6 @@
 package dev.oblac.eddi
 
 import arrow.core.Either
-import arrow.core.right
-import kotlinx.coroutines.*
-import java.util.*
 
 /**
  * Generic event listener functional interface.
@@ -27,27 +24,6 @@ fun interface CommandProcessor<C : Command> {
     operator fun invoke(command: C): Either<CommandError, C>
 }
 
-class AsyncCommandHandler<R>(
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val target: CommandHandler<R>
-) : CommandHandler<UUID> {
-    // todo make jobs expirable, make the storage pluggable
-    private val jobs = mutableMapOf<UUID, Job>()
-
-    override fun invoke(command: Command): Either<CommandError, UUID> {
-        val job = CoroutineScope(dispatcher).launch {
-            target.invoke(command)
-        }
-        val jobId = UUID.randomUUID()
-        jobs[jobId] = job
-        job.invokeOnCompletion {
-            // todo we should have timeout mechanism to clean up old jobs
-            jobs.remove(jobId)
-        }
-        return jobId.right()
-    }
-}
-
 /// Helpers
 
 /**
@@ -57,8 +33,20 @@ fun <R> commandHandler(handler: (Command) -> Either<CommandError, R>): CommandHa
     CommandHandler { command -> handler(command) }
 
 /**
- * Extension function to apply async execution effect to a CommandHandler.
- * Wraps the handler in an AsyncCommandHandler that executes commands asynchronously.
+ * Extension function to apply a retry effect to a CommandHandler.
+ * Re-runs the command while it fails with [ConcurrencyConflict], at most [times] re-runs after the
+ * first attempt. Every other result is returned as is.
  */
-fun <R> CommandHandler<R>.async(dispatcher: CoroutineDispatcher = Dispatchers.Default): AsyncCommandHandler<R> =
-    AsyncCommandHandler(dispatcher, this)
+fun <R> CommandHandler<R>.retryOnConflict(times: Int = 3): CommandHandler<R> {
+    val target = this
+    return CommandHandler { command ->
+        var result = target(command)
+        var retry = 0
+        while (retry < times && result.leftOrNull() is ConcurrencyConflict) {
+            retry++
+            println("🔁 Command ${command::class.simpleName} conflicted, retry $retry/$times")
+            result = target(command)
+        }
+        result
+    }
+}

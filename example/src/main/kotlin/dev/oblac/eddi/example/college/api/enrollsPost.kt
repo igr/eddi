@@ -2,14 +2,8 @@ package dev.oblac.eddi.example.college.api
 
 import dev.oblac.eddi.example.college.CourseId
 import dev.oblac.eddi.example.college.EnrollStudentInCourse
-import dev.oblac.eddi.example.college.Main
+import dev.oblac.eddi.example.college.StudentEnrolledInCourse
 import dev.oblac.eddi.example.college.StudentId
-import dev.oblac.eddi.example.college.projection.dbFindCourseById
-import dev.oblac.eddi.example.college.projection.dbFindStudentById
-import dev.oblac.eddi.json.Json
-import io.ktor.http.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.util.*
 
@@ -20,30 +14,14 @@ data class EnrollRequest(
 
 fun Routing.apiEnrolls() {
     post("/api/enrolls") {
-        val body = call.receiveText()
-        val node = Json.fromJson(body, EnrollRequest::class)
-        val courseId = node.course
-        val studentId = node.student
+        val request = call.receiveJsonOr400<EnrollRequest>() ?: return@post
 
-        val student = dbFindStudentById(studentId)!!
-        val course = dbFindCourseById(courseId)!!
-
-        Main.launch(
+        val result = execute(
             EnrollStudentInCourse(
-                StudentId(student.id),
-                CourseId(course.id),
+                StudentId(request.student),
+                CourseId(request.course),
             )
-        ).fold(
-            ifLeft = {
-                call.respondText(
-                    "Error: error",
-                    ContentType.Text.Plain,
-                    HttpStatusCode.BadRequest
-                )
-            },
-            ifRight = {
-                call.respondText(Json.toJson(StudentResponse(student.id)), ContentType.Application.Json, HttpStatusCode.Accepted)
-            }
         )
+        call.respondCommand<StudentEnrolledInCourse>(result) { it.student.id }
     }
 }

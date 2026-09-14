@@ -5,9 +5,6 @@ interface EventStoreRepo {
     fun <T: Event> findEventById(eventName: EventName, id: Id): EventEnvelope<T>?
 
     fun <T: Event> findEventByMultipleIds(eventName: EventName, vararg ids: Id): EventEnvelope<T>?
-
-
-    fun <T: Event> findEvents(name: EventName, dataFilters: Map<String, String> = mapOf()): List<EventEnvelope<T>>
 }
 
 /**
@@ -21,9 +18,3 @@ inline fun <reified E : Event> EventStoreRepo.findEventById(id: Id): EventEnvelo
  */
 inline fun <reified E : Event> EventStoreRepo.findEventByMultipleIds(vararg ids: Id): EventEnvelope<E>? =
     findEventByMultipleIds(EventName.of(E::class), *ids)
-
-/**
- * Finds all [E] whose payload matches [dataFilters].
- */
-inline fun <reified E : Event> EventStoreRepo.findEvents(dataFilters: Map<String, String> = mapOf()): List<EventEnvelope<E>> =
-    findEvents(EventName.of(E::class), dataFilters)

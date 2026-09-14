@@ -14,6 +14,17 @@ data class RegisterStudent(
 @JvmInline
 value class StudentId(override val id: UUID) : Id
 
+/**
+ * Value-derived id of an email address: the same email always yields the same [EmailId], so
+ * "a student with this email exists" is an id lookup inside the consistency boundary.
+ */
+@JvmInline
+value class EmailId(override val id: UUID) : Id {
+    companion object {
+        fun of(email: String) = EmailId(UUID.nameUUIDFromBytes("email:$email".toByteArray()))
+    }
+}
+
 data class StudentRegistered(
     val studentId: StudentId,
     val firstName: String,
@@ -21,7 +32,7 @@ data class StudentRegistered(
     val email: String,
     val registeredAt: Instant = Instant.now()
 ) : Event {
-    override fun ids() = listOf(studentId)
+    override fun ids() = listOf(studentId, EmailId.of(email))
 }
 
 sealed interface RegisterStudentError : CommandError {
@@ -32,7 +43,7 @@ sealed interface RegisterStudentError : CommandError {
 
 fun ensureUniqueEmail(es: EventStoreRepo) = commandProcessor<RegisterStudent> {
     ensure(
-        es.findEvents<StudentRegistered>(mapOf("email" to it.email)).isEmpty()
+        es.findEventById<StudentRegistered>(EmailId.of(it.email)) == null
     ) { RegisterStudentError.StudentAlreadyExist }
 }
 

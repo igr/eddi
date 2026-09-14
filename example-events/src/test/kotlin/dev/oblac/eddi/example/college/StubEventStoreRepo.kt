@@ -9,8 +9,8 @@ import dev.oblac.eddi.Id
 import java.time.Instant
 
 /**
- * In-memory [EventStoreRepo] for processor tests. Events are matched by name only,
- * which is enough for the guards under test.
+ * In-memory [EventStoreRepo] for processor tests. Lookups match the event name and the ids the
+ * event carries.
  */
 @Suppress("UNCHECKED_CAST")
 class StubEventStoreRepo(
@@ -18,16 +18,13 @@ class StubEventStoreRepo(
 ) : EventStoreRepo {
 
     override fun <T : Event> findEventById(eventName: EventName, id: Id): EventEnvelope<T>? =
-        events.lastOrNull { it.eventName == eventName } as EventEnvelope<T>?
+        events.lastOrNull { it.eventName == eventName && id in it.event.ids() } as EventEnvelope<T>?
 
     override fun <T : Event> findEventByMultipleIds(
         eventName: EventName,
         vararg ids: Id
     ): EventEnvelope<T>? =
-        events.lastOrNull { it.eventName == eventName } as EventEnvelope<T>?
-
-    override fun <T : Event> findEvents(name: EventName, dataFilters: Map<String, String>): List<EventEnvelope<T>> =
-        events.filter { it.eventName == name } as List<EventEnvelope<T>>
+        events.lastOrNull { it.eventName == eventName && it.event.ids().containsAll(ids.toList()) } as EventEnvelope<T>?
 
     companion object {
         fun <E : Event> envelope(event: E, seq: Long = 1L): EventEnvelope<E> =
